@@ -18,11 +18,18 @@ const Module = require('../../lib/module')
 class ModuleContacts extends Module {
     /**
     * @param {AppBackground} app - The background application.
+    * @param {Array} providers - ContactProvider classes used to sync Contacts with.
     */
-    constructor(app) {
+    constructor(app, providers) {
         super(app)
+
         // Holds Contact instances, not Contact state.
         this.contacts = {}
+        this.providers = []
+
+        for (const Provider of providers) {
+            this.providers.push(new Provider(this))
+        }
 
         this.app.on('bg:user:logged_out', () => {
             this.contacts = {}
@@ -57,33 +64,8 @@ class ModuleContacts extends Module {
     * and update existing or create new conctacts.
     */
     async _platformData() {
-        this.app.setState({contacts: {status: 'loading'}})
-        const res = await this.app.api.client.get('api/phoneaccount/basic/phoneaccount/?active=true&order_by=description')
-        if (this.app.api.NOTOK_STATUS.includes(res.status)) {
-            this.app.logger.warn(`${this}platform data request failed (${res.status})`)
-            return
-        }
-
-        // Remove the user's own account from the list.
-        const ownAccountId = parseInt(this.app.state.settings.webrtc.account.selected.username)
-
-        let voipaccounts = res.data.objects.filter((i) => (i.account_id !== ownAccountId))
-        this.app.logger.debug(`${this}retrieved ${voipaccounts.length} endpoints`)
-        this._syncEndpoints(voipaccounts)
-        this.app.setState({contacts: {status: null}})
-        // Subscribe here, so we are able to wait before a subscription
-        // is completed until going to the next. This prevents the
-        // server from being hammered.
-        for (let contactId of Object.keys(this.contacts)) {
-            const contact = this.contacts[contactId]
-            if (contact && ['registered', 'connected'].includes(this.app.state.calls.ua.status)) {
-                const endpoints = this.contacts[contactId].endpoints
-                for (let endpointId of Object.keys(endpoints)) {
-                    if (endpoints[endpointId].presence) {
-                        await endpoints[endpointId].presence.subscribe()
-                    }
-                }
-            }
+        for (const provider of this.providers) {
+            provider._platformData()
         }
     }
 
@@ -116,61 +98,6 @@ class ModuleContacts extends Module {
         }
 
         Object.assign(moduleStore, {status: 'ready'})
-    }
-
-
-    /**
-    * Compare, update and create Contact instances with appropriate state
-    * from VoIP-accounts that are listed under a client on
-    * the VoIPGRID platform.
-    * @param {Array} voipaccounts - The endpoints to check against.
-    */
-    _syncEndpoints(voipaccounts) {
-        let contacts = this.app.state.contacts.contacts
-        // Loop over platform endpoint data and match them with
-        // existing contact state.
-        for (let endpoint of voipaccounts) {
-            let endpointMatch = null
-            for (const id of Object.keys(contacts)) {
-                if (contacts[id].endpoints[endpoint.account_id]) {
-                    endpointMatch = {contact: contacts[id], endpoint}
-                }
-            }
-
-            let contact
-
-            if (endpointMatch) {
-                // The contact already exists in state but not as
-                // a logical Contact class yet. Hydrate it.
-                if (!this.contacts[endpointMatch.contact.id]) {
-                    contact = new Contact(this.app, endpointMatch.contact)
-                    this.contacts[contact.id] = contact
-                }
-
-            } else {
-                // The contact endpoint doesn't exist yet. Create a new Contact with
-                // this endpoint as it's only endpoint. Use the name of the
-                // endpoint for the default Contact name.
-                contact = new Contact(this.app, {
-                    endpoints: {
-                        [endpoint.account_id]: {
-                            active: endpoint.sipreginfo ? true : false,
-                            id: endpoint.account_id,
-                            name: endpoint.description,
-                            number: endpoint.internal_number,
-                            status: endpoint.sipreginfo ? 'unavailable' : 'unregistered',
-                            ua: endpoint.sipreginfo ? endpoint.sipreginfo.useragent : this.app.$t('not available').capitalize(),
-                        },
-                    },
-                    name: endpoint.description,
-                })
-
-                this.contacts[contact.id] = contact
-            }
-        }
-
-        // Persist the updated contact list.
-        this.app.setState({contacts: {contacts: this.app.state.contacts.contacts}}, {persist: true})
     }
 
 

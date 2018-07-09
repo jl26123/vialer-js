@@ -11,9 +11,12 @@
         <script src="js/translations.js"></script>
         <%if (['electron', 'webview'].includes(settings.BUILD_TARGET)) { %>
         <script src="js/vendor_bg.js"></script>
+        <script src="js/app_fg_modules.js"></script>
+        <script src="js/app_bg_modules.js"></script>
         <script src="js/app_bg.js"></script>
         <script src="js/app_fg.js"></script>
         <% } else { %>
+        <script src="js/app_fg_modules.js"></script>
         <script src="js/app_fg.js"></script>
         <% } %>
     </head>

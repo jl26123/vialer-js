@@ -94,9 +94,24 @@ class AppBackground extends App {
             this.localVideo.addEventListener('canplay', () => this.localVideo.play())
         }
 
-        // Start by initializing all modules.
-        for (let module of this._modules) {
-            this.modules[module.name] = new module.Module(this)
+        // Start by initializing builtin modules.
+        for (const builtin of this._modules.builtin) {
+            if (builtin.adapter || builtin.providers) {
+                if (builtin.providers) {
+                    const providers = builtin.providers.map((mod) => require(mod))
+                    this.modules[builtin.name] = new builtin.module(this, providers)
+                } else if (builtin.adapter) {
+                    this.modules[builtin.name] = new builtin.module(this, require(builtin.adapter))
+                }
+            } else {
+                this.modules[builtin.name] = new builtin.module(this, null)
+            }
+        }
+
+        // Then process custom modules.
+        for (const custom of this._modules.custom) {
+            const Module = require(custom.module)
+            this.modules[custom.name] = new Module(this)
         }
 
         this.api = new Api(this)
@@ -188,63 +203,73 @@ class AppBackground extends App {
     * sequently. Multiple requests can come in from events; each should
     * be processed one at a time.
     * @param {Object} options - See the parameter description of super.
+    * @returns {Promise} - When the state is merged.
     */
-    async __mergeState({action = 'upsert', encrypt = true, path = null, persist = false, state}) {
-        const storeEndpoint = this.state.user.username
-        // This could happen when an action is still queued, while the user
-        // is logging out at the same moment. The action is then ignored.
-        if (persist && !storeEndpoint) return
+    async __mergeState({action = 'upsert', encrypt = true, path = null, persist = false, resolve, reject, state}) {
+        return new Promise(async(_resolve, _reject) => {
+            const storeEndpoint = this.state.user.username
+            // This could happen when an action is still queued, while the user
+            // is logging out at the same moment. The action is then ignored.
+            if (persist && !storeEndpoint) return
 
-        if (this.__mergeBusy) {
-            this.__mergeQueue.push(() => this.__mergeState({action, encrypt, path, persist, state}))
-            return
-        } else if (this.__mergeQueue.length) {
-            // See if a request is queued before starting.
-            this.__mergeQueue.shift()()
-        }
-
-        // Flag that the operation is currently in use.
-        this.__mergeBusy = true
-        super.__mergeState({action, encrypt, path, persist, state})
-
-        if (!persist) {
-            this.__mergeBusy = false
-            return
-        }
-
-        // Background is leading and is the only one that
-        // writes to storage using encryption.
-        let storeKey = encrypt ? `${storeEndpoint}/state/vault` : `${storeEndpoint}/state`
-        let storeState = this.store.get(storeKey)
-
-        if (storeState) {
-            if (encrypt) {
-                storeState = JSON.parse(await this.crypto.decrypt(this.crypto.sessionKey, storeState))
+            if (this.__mergeBusy) {
+                this.__mergeQueue.push(() => this.__mergeState({action, encrypt, path, persist, reject: _reject, resolve: _resolve, state}))
+                return
             }
-        } else storeState = {}
 
-        // Store specific properties in a nested key path.
-        if (path) {
-            path = path.split('.')
-            const _ref = path.reduce((o, i)=>o[i], storeState)
-            this.__mergeDeep(_ref, state)
-        } else {
-            this.__mergeDeep(storeState, state)
-        }
+            if (this.__mergeQueue.length) {
+                // See if a request is queued before starting.
+                await this.__mergeQueue.shift()()
+            }
 
-        // Encrypt the updated store state.
-        if (encrypt) {
-            storeState = await this.crypto.encrypt(this.crypto.sessionKey, JSON.stringify(storeState))
-        }
+            // Flag that the operation is currently in use.
+            this.__mergeBusy = true
+            super.__mergeState({action, encrypt, path, persist, reject: _reject, resolve: _resolve, state})
 
-        this.store.set(storeKey, storeState)
-        // The method is free to process the next request.
-        this.__mergeBusy = false
+            if (!persist) {
+                this.__mergeBusy = false
+                if (resolve) resolve()
+                else _resolve()
+                return
+            }
 
-        // See if a request is queued before leaving.
-        if (this.__mergeQueue.length) {
-            this.__mergeQueue.shift()()
-        }
+            // Background is leading and is the only one that
+            // writes to storage using encryption.
+            let storeKey = encrypt ? `${storeEndpoint}/state/vault` : `${storeEndpoint}/state`
+            let storeState = this.store.get(storeKey)
+
+            if (storeState) {
+                if (encrypt) {
+                    storeState = JSON.parse(await this.crypto.decrypt(this.crypto.sessionKey, storeState))
+                }
+            } else storeState = {}
+
+            // Store specific properties in a nested key path.
+            if (path) {
+                path = path.split('.')
+                const _ref = path.reduce((o, i)=>o[i], storeState)
+                this.__mergeDeep(_ref, state)
+            } else {
+                this.__mergeDeep(storeState, state)
+            }
+
+            // Encrypt the updated store state.
+            if (encrypt) {
+                storeState = await this.crypto.encrypt(this.crypto.sessionKey, JSON.stringify(storeState))
+            }
+
+            this.store.set(storeKey, storeState)
+            // The method is free to process the next request.
+            this.__mergeBusy = false
+            if (resolve) resolve()
+            else _resolve()
+
+            // See if a request is queued before leaving.
+            if (this.__mergeQueue.length) {
+                this.__mergeQueue.shift()()
+            }
+        })
+
     }
 
 
@@ -402,17 +427,34 @@ class AppBackground extends App {
     }
 }
 
-let bgOptions = {env, modules: [
-    {Module: require('./modules/activity'), name: 'activity'},
-    {Module: require('./modules/app'), name: 'app'},
-    {Module: require('./modules/availability'), name: 'availability'},
-    {Module: require('./modules/calls'), name: 'calls'},
-    {Module: require('./modules/contacts'), name: 'contacts'},
-    {Module: require('./modules/settings'), name: 'settings'},
-    {Module: require('./modules/queues'), name: 'queues'},
-    {Module: require('./modules/ui'), name: 'ui'},
-    {Module: require('./modules/user'), name: 'user'},
-]}
+let bgOptions = {
+    env,
+    modules: {
+        builtin: [
+            {module: require('./modules/activity'), name: 'activity'},
+            {module: require('./modules/app'), name: 'app'},
+            {
+                adapter: process.env.MOD_AVAILABILITY_ADAPTER,
+                module: require('./modules/availability'),
+                name: 'availability',
+            },
+            {module: require('./modules/calls'), name: 'calls'},
+            {
+                module: require('./modules/contacts'),
+                name: 'contacts',
+                providers: process.env.MOD_CONTACTS_PROVIDERS,
+            },
+            {module: require('./modules/settings'), name: 'settings'},
+            {module: require('./modules/ui'), name: 'ui'},
+            {
+                adapter: process.env.MOD_USER_ADAPTER,
+                module: require('./modules/user'),
+                name: 'user',
+            },
+        ],
+        custom: process.env.MOD_CUSTOM_BG,
+    },
+}
 
 if (env.isBrowser) {
     if (env.isExtension) {

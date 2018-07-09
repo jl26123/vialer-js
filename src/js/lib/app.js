@@ -187,7 +187,7 @@ class App extends Skeleton {
     * @param {String} [options.persist=false] - Whether to persist this state change.
     * @param {Object} state - An object to merge into the store.
     */
-    __mergeState({action = 'upsert', encrypt = true, path = null, persist = false, state}) {
+    async __mergeState({action = 'upsert', encrypt = true, path = null, persist = false, state}) {
         if (!path) this.__mergeDeep(this.state, state)
         else {
             path = path.split('.')
@@ -310,10 +310,10 @@ class App extends Skeleton {
     * @param {Object} state - The state to update.
     * @param {Boolean} options - Whether to persist the changed state to localStorage.
     */
-    setState(state, {action, encrypt, path, persist} = {}) {
+    async setState(state, {action, encrypt, path, persist} = {}) {
         if (!action) action = 'upsert'
         // Merge state in the context of the executing script.
-        this.__mergeState({action, encrypt, path, persist, state})
+        await this.__mergeState({action, encrypt, path, persist, state})
         // Sync the state to the other script context(bg/fg).
         // Make sure that we don't pass a state reference over the
         // EventEmitter in case of a webview; this would create
@@ -321,6 +321,7 @@ class App extends Skeleton {
         let stateClone = state
         if (!this.env.isExtension) stateClone = JSON.parse(JSON.stringify(state))
         this.emit(`${this._emitTarget}:set_state`, {action, encrypt, path, persist, state: stateClone})
+        return
     }
 }
 

@@ -42,6 +42,7 @@ module.exports = (app) => {
             status: 'settings.webrtc.account.status',
             user: 'user',
             vendor: 'app.vendor',
+            voip: 'availability.voip',
         },
         watch: {
             /**

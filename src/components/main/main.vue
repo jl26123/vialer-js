@@ -17,12 +17,7 @@
             <Login v-if="!user.authenticated" class="panel-content"/>
             <template v-else>
                 <MainMenuBar/>
-                <Availability v-if="layer==='availability'"/>
-                <Contacts v-else-if="layer==='contacts'"/>
-                <Queues v-else-if="layer==='queues'"/>
-                <Settings v-else-if="layer==='settings'"/>
-                <Calls v-else-if="layer==='calls'"/>
-                <Activity v-else-if="layer==='activity'"/>
+                <component v-bind:is="layer"></component>
             </template>
         </div>
     </div>

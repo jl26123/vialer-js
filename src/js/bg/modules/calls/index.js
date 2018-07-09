@@ -109,7 +109,9 @@ class ModuleCalls extends Module {
         */
         this.app.on('bg:calls:call_terminate', ({callId}) => this.calls[callId].terminate())
 
-        this.app.on('bg:calls:connect', () => this.connect())
+        this.app.on('bg:calls:connect', () => {
+            this.connect()
+        })
         this.app.on('bg:calls:disconnect', ({reconnect}) => this.disconnect(reconnect))
 
         this.app.on('bg:calls:dtmf', ({callId, key}) => this.calls[callId].session.dtmf(key))
@@ -252,8 +254,10 @@ class ModuleCalls extends Module {
 
     /**
     * Deal with events coming from a UA.
+    * @param {Function} resolve - Resolve Promise when a connection is made.
+    * @param {Function} reject - Reject Promise when a connection fails.
     */
-    __uaEvents() {
+    __uaEvents(resolve, reject) {
         /**
         * An incoming call. Call-waiting is not implemented.
         * A new incoming call on top of a call that is already
@@ -335,6 +339,7 @@ class ModuleCalls extends Module {
             this.app.logger.info(`${this}connected to ${this._uaOptions.wsServers}`)
             // Reset the retry interval timer..
             this.retry = Object.assign({}, this.retryDefault)
+            if (resolve) resolve()
         })
 
 
@@ -356,7 +361,9 @@ class ModuleCalls extends Module {
             if (this.reconnect) {
                 // Reconnection timer logic is performed only here.
                 this.app.logger.debug(`${this}reconnecting to ${this._uaOptions.wsServers} in ${this.retry.timeout} ms`)
-                setTimeout(() => this.connect(), this.retry.timeout)
+                setTimeout(() => {
+                    this.connect()
+                }, this.retry.timeout)
                 this.retry = this.app.timer.increaseTimeout(this.retry)
             }
         })
@@ -371,9 +378,12 @@ class ModuleCalls extends Module {
     * Setup the initial UA options. This depends for instance
     * on whether the application will be using the softphone
     * to connect to the backend with or the vendor portal user.
+    * @param {Object} account - The SIP credentials to connect with.
+    * @param {Object} account.username - Username to connect with.
+    * @param {Object} account.password - Password to connect with.
     * @returns {Object} UA options that are passed to Sip.js
     */
-    __uaOptions() {
+    __uaOptions(account) {
         const settings = this.app.state.settings
 
         // For webrtc this is a voipaccount, otherwise an email address.
@@ -396,21 +406,17 @@ class ModuleCalls extends Module {
             wsServers: `wss://${settings.sipEndpoint}`,
         }
 
+        options.authorizationUser = account.username
+        options.password = account.password
+        options.uri = account.uri
+
         // Log in with the WebRTC voipaccount when it is enabled.
         // The voipaccount should be from the same client as the logged-in
         // user, or subscribe information won't work.
-        if (settings.webrtc.enabled && (settings.webrtc.account.selected.username && settings.webrtc.account.selected.password)) {
-            options.authorizationUser = settings.webrtc.account.selected.username
-            options.password = settings.webrtc.account.selected.password
+        if (settings.webrtc.enabled) {
             options.register = true
-            options.uri = `sip:${settings.webrtc.account.selected.username}@voipgrid.nl`
         } else {
-            // Login with platform email without SIP register.
-            options.authorizationUser = this.app.state.user.username
-            // Use the platform user token when logging in; not the password.
-            options.password = this.app.state.user.platform.tokens.sip
             options.register = false
-            options.uri = `sip:${this.app.state.user.username}`
         }
 
         return options
@@ -709,26 +715,30 @@ class ModuleCalls extends Module {
 
     /**
     * Initialize the SIPJS UserAgent and register its events.
+    * @returns {Promise} - Resolves when connected.
     */
     connect() {
-        // Reconnect when already connected.
-        if (this.ua && this.ua.isConnected()) {
-            this.app.logger.info(`${this}already connected; disconnecting`)
-            this.disconnect(true)
-            return
-        }
+        const account = this.app.state.settings.webrtc.account.selected
+        return new Promise((resolve, reject) => {
+            // Reconnect when already connected.
+            if (this.ua && this.ua.isConnected()) {
+                this.app.logger.info(`${this}already connected; disconnecting`)
+                this.disconnect(true)
+                return
+            }
 
-        this._uaOptions = this.__uaOptions()
-        this.app.logger.info(`${this}connecting to ${this._uaOptions.wsServers}`)
-        // Login with the WebRTC account or platform account.
-        if (!this._uaOptions.authorizationUser || !this._uaOptions.password) {
-            this.app.logger.error(`${this}cannot connect without username and password`)
-        }
+            this._uaOptions = this.__uaOptions(account)
+            this.app.logger.info(`${this}connecting to ${this._uaOptions.wsServers} (register: ${this._uaOptions.register})`)
+            // Login with the WebRTC account or platform account.
+            if (!this._uaOptions.authorizationUser || !this._uaOptions.password) {
+                this.app.logger.error(`${this}cannot connect without username and password`)
+            }
 
-        // Fresh new instance is used each time, so we can reset settings properly.
-        this.ua = new SIP.UA(this._uaOptions)
-        this.__uaEvents()
-        this.ua.start()
+            // Fresh new instance is used each time, so we can reset settings properly.
+            this.ua = new SIP.UA(this._uaOptions)
+            this.__uaEvents(resolve, reject)
+            this.ua.start()
+        })
     }
 
 

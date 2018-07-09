@@ -76,7 +76,6 @@ class ModuleApp extends Module {
                     phone: process.env.VENDOR_SUPPORT_PHONE,
                     website: process.env.VENDOR_SUPPORT_WEBSITE,
                 },
-                type: process.env.VENDOR_TYPE,
             },
             version: {
                 current: process.env.VERSION,

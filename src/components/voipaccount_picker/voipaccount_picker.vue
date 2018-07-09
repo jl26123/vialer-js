@@ -1,7 +1,7 @@
 <component class="component-voipaccount-picker">
     <!-- Platform integration allows the user to select a voip-account. -->
 
-    <Field name="webrtc_account" type="select" v-if="app.vendor.type === 'closed'"
+    <Field name="webrtc_account" type="select"
         :disabled="!settings.webrtc.enabled"
         :empty="(status === 'loading') ? `${$t('loading VoIP accounts')}...` : $t('no VoIP accounts')"
         :help="$t('voIP account to use as your softphone.')"
@@ -49,17 +49,4 @@
             </template>
         </template>
     </Field>
-
-
-    <div v-else-if="settings.webrtc.enabled && app.vendor.type === 'free'">
-        <Field name="webrtc_username" type="text"
-            :disabled="!settings.webrtc.enabled"
-            :label="$t('voIP') + ' ' + $t('username')" :model.sync="selected.username"
-            :placeholder="$t('voIP account') + ' id'"/>
-
-        <Field name="webrtc_password" type="password"
-            :disabled="!settings.webrtc.enabled"
-            :label="$t('voIP') + ' ' + $t('password')" :model.sync="selected.password"
-            :placeholder="$t('voIP account') + ' ' + $t('password')"/>
-    </div>
 </component>

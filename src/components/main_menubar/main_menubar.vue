@@ -17,8 +17,8 @@
             <icon name="availability"/>
         </div>
 
-        <div class="option queues test-menubar-queues" :class="classes('queues')" @click="setLayer('queues')">
-            <icon name="queues"/>
+        <div class="option" v-for="module in customModules" @click="setLayer(module.menubarIcon)">
+            <icon :name="module.menubarIcon"/>
         </div>
     </div>
 </component>

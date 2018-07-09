@@ -1,7 +1,6 @@
 /** @memberof Gulp */
 const {_extend} = require('util')
 
-const addsrc = require('gulp-add-src')
 const browserify = require('browserify')
 const buffer = require('vinyl-buffer')
 const childExec = require('child_process').exec
@@ -207,7 +206,7 @@ class Helpers {
             manifest.permissions.push(this.settings.brands[brandName].permissions)
         }
 
-        manifest.homepage_url = this.settings.brands[brandName].homepage_url
+        manifest.homepage_url = this.settings.brands[brandName].vendor.support.website
         manifest.version = PACKAGE.version
         return manifest
     }
@@ -253,17 +252,24 @@ class Helpers {
                 APP_NAME: this.settings.brands[brandName].name.production,
                 BRAND_NAME: brandName,
                 DEPLOY_TARGET: this.settings.DEPLOY_TARGET,
+
+                MOD_AVAILABILITY_ADAPTER: this.settings.brands[brandName].modules.builtin.bg.availability.adapter,
+                MOD_CONTACTS_PROVIDERS: this.settings.brands[brandName].modules.builtin.bg.contacts.providers,
+                MOD_CUSTOM_BG: this.settings.brands[brandName].modules.custom.bg,
+                MOD_CUSTOM_FG: this.settings.brands[brandName].modules.custom.fg,
+                MOD_USER_ADAPTER: this.settings.brands[brandName].modules.builtin.bg.user.adapter,
+
                 NODE_ENV: this.settings.NODE_ENV,
                 PLATFORM_URL: this.settings.brands[brandName].permissions,
                 PORTAL_NAME: this.settings.brands[brandName].vendor.portal.name,
                 PORTAL_URL: this.settings.brands[brandName].vendor.portal.url,
                 SENTRY_DSN: this.settings.brands[brandName].telemetry.sentry.dsn,
                 SIP_ENDPOINT: this.settings.brands[brandName].sip_endpoint,
+
                 VENDOR_NAME: this.settings.brands[brandName].vendor.name,
                 VENDOR_SUPPORT_EMAIL: this.settings.brands[brandName].vendor.support.email,
                 VENDOR_SUPPORT_PHONE: this.settings.brands[brandName].vendor.support.phone,
                 VENDOR_SUPPORT_WEBSITE: this.settings.brands[brandName].vendor.support.website,
-                VENDOR_TYPE: this.settings.brands[brandName].vendor.type,
                 VERBOSE: this.settings.VERBOSE,
                 VERSION: this.settings.PACKAGE.version,
             }))
@@ -275,22 +281,79 @@ class Helpers {
 
 
     /**
+    * Browserify a glob pattern of javascript files.
+    * Source: https://github.com/garage11/garage11/
+    * @param {String} brandName - Brand to produce js for.
+    * @param {String} buildType - Target environment to produce js for.
+    * @param {Array} modules - Node modules to build.
+    * @param {String} appType - The application type; 'bg' or 'fg'.
+    * @param {Function} cb - Callback when the task is done.
+    * @returns {Promise} - Resolves when all modules are processed.
+    */
+    jsModules(brandName, buildType, modules, appType) {
+        return new Promise((resolve) => {
+            const b = browserify({
+                basedir: path.join(__dirname, '..'),
+                detectGlobals: false,
+            })
+            for (const moduleName of Object.keys(modules.builtin[appType])) {
+                if (modules.builtin[appType][moduleName].providers) {
+                    for (const provider of modules.builtin[appType][moduleName].providers) {
+                        gutil.log(`Builtin ${appType} ${moduleName} provider found: '${provider}'`)
+                        b.require(provider)
+                    }
+                } else if (modules.builtin[appType][moduleName].adapter) {
+                    gutil.log(`Builtin ${appType} ${moduleName} adapter found: '${modules.builtin[appType][moduleName].adapter}'`)
+                    b.require(modules.builtin[appType][moduleName].adapter)
+                }
+            }
+
+            for (const moduleObj of modules.custom[appType]) {
+                b.require(moduleObj.module)
+                gutil.log(`Custom ${appType} module found: '${moduleObj.module}' (${moduleObj.name})`)
+            }
+
+
+            b.bundle()
+                .on('error', notify.onError('Error: <%= error.message %>'))
+                .on('end', () => {
+                    resolve()
+                })
+                .pipe(source(`app_${appType}_modules.js`))
+                .pipe(buffer())
+                .pipe(sourcemaps.init({loadMaps: true}))
+                .pipe(ifElse(this.settings.PRODUCTION, () => minifier()))
+                .pipe(sourcemaps.write('./'))
+                .pipe(size(_extend({title: `app_${appType}_modules.js`}, this.settings.SIZE_OPTIONS)))
+                .pipe(gulp.dest(path.join(this.settings.BUILD_DIR, brandName, buildType, 'js')))
+        })
+    }
+
+
+    /**
     * Generic scss task used for multiple entrypoints.
     * @param {String} brandName - Brand to produce scss for.
     * @param {String} buildType - Target environment to produce scss for.
     * @param {String} scssName - Name of the scss entrypoint.
     * @param {String} sourcemap - Generate sourcemaps.
-    * @param {String} extraSource - Add extra entrypoints.
+    * @param {Array} extraSources - Add extra entrypoints.
     * @returns {Function} - Sass function to use.
     */
-    scssEntry(brandName, buildType, scssName, sourcemap = false, extraSource = false) {
+    scssEntry(brandName, buildType, scssName, sourcemap = false, extraSources = []) {
         const brandColors = this.formatScssVars(this.settings.brands[brandName].colors)
-        return gulp.src(`./src/scss/${scssName}.scss`)
-            .pipe(ifElse(extraSource, () => addsrc(extraSource)))
+        let includePaths = [
+            this.settings.NODE_PATH,
+            path.join(this.settings.SRC_DIR, 'scss'),
+        ]
+
+        let sources = [`./src/scss/vialer-js/${scssName}.scss`]
+        if (extraSources.length) sources = sources.concat(extraSources)
+
+        return gulp.src(sources)
             .pipe(insert.prepend(brandColors))
             .pipe(ifElse(sourcemap, () => sourcemaps.init({loadMaps: true})))
             .pipe(sass({
-                includePaths: this.settings.NODE_PATH,
+                includePaths,
                 sourceMap: false,
                 sourceMapContents: false,
             }))

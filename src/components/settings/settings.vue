@@ -51,11 +51,6 @@
             :help="$t('domainname of the SIP server with websocket support.')"
             :placeholder="$t('SIP server')"
             :validation="$v.settings.sipEndpoint"/>
-
-        <Field v-if="vendor.type === 'open'" name="platform_enabled" type="checkbox"
-            :label="`${vendor.name} ${$t('platform integration')}`"
-            :model.sync="settings.platform.enabled"
-            :help="$t('add user availability, queues status monitoring and calling without WebRTC. A paid {vendor} account is required.', {vendor: vendor.name})"/>
     </div>
 
     <!-- Privacy settings -->

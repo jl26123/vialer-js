@@ -34,6 +34,7 @@ module.exports = (app) => {
                     } else {
                         app.emit('bg:user:login', {
                             password: this.password,
+                            sipEndpoint: this.sipEndpoint,
                             username: this.user.username,
                         })
                     }
@@ -58,6 +59,8 @@ module.exports = (app) => {
         staticRenderFns: templates.login.s,
         store: {
             app: 'app',
+            availability: 'availability',
+            sipEndpoint: 'settings.sipEndpoint',
             url: 'settings.platform.url',
             user: 'user',
             vendor: 'app.vendor',
@@ -85,7 +88,6 @@ module.exports = (app) => {
                 },
                 user: {
                     username: {
-                        email: v.email,
                         requiredIf: v.requiredIf(() => {
                             return !this.app.session.active
                         }),

@@ -64,7 +64,6 @@ class ModuleSettings extends Module {
             webrtc: {
                 account: {
                     options: [], // Platform integration provides these choices.
-                    password: '',
                     selected: {id: null, password: null, username: null},
                     status: null,
                 },

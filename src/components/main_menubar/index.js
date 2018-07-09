@@ -4,6 +4,11 @@ module.exports = (app) => {
     */
     const MainMenubar = {
         computed: app.helpers.sharedComputed(),
+        data: function() {
+            return {
+                customModules: app.modules,
+            }
+        },
         methods: Object.assign({
             classes: function(block) {
                 let classes = {}

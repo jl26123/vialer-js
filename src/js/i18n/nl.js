@@ -197,7 +197,7 @@ global.translations.nl = {
     'voIP account to use as your softphone.': 'voIP-account dat gebruikt wordt als softphone.',
     'voIP accounts': 'voIP-accounts',
     'welcome back!': 'welkom terug!',
-    'welcome to your': 'welkom bij je',
+    'welcome to': 'welkom bij',
     'yes, let me help': 'ja, ik wil helpen',
     'yesterday': 'gisteren',
     'you are disconnected from the internet; check your connectivity.': 'je bent momenteel offline; controleer je verbinding.',

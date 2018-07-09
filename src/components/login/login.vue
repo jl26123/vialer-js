@@ -2,7 +2,7 @@
     <header>
         <div class="greeting">{{greeting}}</div>
         <p class="welcome-message cf">
-            {{$t('welcome to your')}} {{app.name}}.<br/>
+            {{$t('welcome to')}} {{app.name}}.<br/>
             <span v-if="!app.session.active && app.session.available.length" class="cf">
                 {{$t('select an existing session to continue')}}:
             </span>
@@ -46,6 +46,11 @@
     </template>
     <!-- Show username/pw when there are no sessions yet or when a new session is selected.-->
     <template v-else-if="!app.session.available.length || app.session.active">
+        <Field v-if="!availability.voip.endpoint && !sipEndpoint" name="sip_endpoint" type="text"
+            :label="$t('SIP endpoint')"
+            :model.sync="sipEndpoint"
+            :placeholder="$t('SIP endpoint')"/>
+
         <Field v-if="app.session.active === 'new' || !app.session.available.length" name="username" type="text"
             :autofocus="true" :label="$t('username')" :model.sync="user.username"
             :placeholder="$t('enter your email address')"
@@ -63,7 +68,7 @@
     </template>
 
     <footer>
-        <div class="forgot-pw">
+        <div v-if="availability.voip.endpoint" class="forgot-pw">
             <a :href="`${url}user/password_reset/`" class="cf" target="_blank">{{$t('forgot your password?')}}</a>
         </div>
         <div class="help-message cf">{{$t('need help?')}}<br/> <span class="cf">{{$t('click on the')}}</span><i @click="setOverlay('about')"><icon name="help"/></i>{{$t('icon')}}</div>

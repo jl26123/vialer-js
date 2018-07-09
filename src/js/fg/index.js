@@ -52,11 +52,15 @@ class AppForeground extends App {
             MainStatusBar: require('../../components/main_statusbar'),
             MicPermission: require('../../components/mic_permission'),
             Notifications: require('../../components/notifications'),
-            Queues: require('../../components/queues'),
             Settings: require('../../components/settings'),
             Soundmeter: require('../../components/soundmeter'),
             VoipaccountPicker: require('../../components/voipaccount_picker'),
             Wizard: require('../../components/wizard'),
+        }
+
+        for (const custom of opts.modules.custom) {
+            const Module = require(custom.module)
+            this.modules[custom.name] = new Module(this)
         }
 
         for (const name of Object.keys(this.components)) {
@@ -106,7 +110,13 @@ class AppForeground extends App {
     }
 }
 
-let fgOptions = {env, modules: []}
+let fgOptions = {
+    env,
+    modules: {
+        custom: process.env.MOD_CUSTOM_FG,
+    },
+}
+
 // Used in browser context to allow a context closure without
 // having to make an additional JavaScript build target.
 if (env.isBrowser) {
