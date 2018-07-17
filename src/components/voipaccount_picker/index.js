@@ -18,16 +18,6 @@ module.exports = (app) => {
                 app.emit('bg:availability:platform_data')
             },
         }, app.helpers.sharedMethods()),
-        mounted: function() {
-            const selectedId = this.settings.webrtc.account.selected.id
-            if (!selectedId) {
-                let selected
-                if (this.settings.webrtc.account.options.length) {
-                    selected = app.utils.copyObject(this.settings.webrtc.account.options[0])
-                    app.setState({settings: {webrtc: {account: {selected}}}}, {persist: true})
-                }
-            }
-        },
         props: {
             info: {default: true},
             label: {default: ''},
@@ -46,43 +36,44 @@ module.exports = (app) => {
         },
         watch: {
             /**
-            * Respond to updates of the VoIPaccount list associated with the user.
+            * Respond to updates of the account list. There may be
+            * validation errors caused by an account's settings.
+            * Refreshing the list triggers validation with
+            * validation rules for the refreshed account list.
             * @param {Array} options - Reactive array with VoIP account options.
             */
             'settings.webrtc.account.options': function(options) {
-                const selectedId = this.settings.webrtc.account.selected.id
-                if (selectedId && options.length) {
+                const account = this.settings.webrtc.account.selected
+                if (account.id && options.length) {
                     // Always update the selected option from the updated
                     // option list, because a setting may have changes.
                     // Select the first option if it isn't.
-                    const match = options.find((i) => i.id === selectedId)
+                    const match = options.find((i) => i.id === account.id)
                     if (match) {
-                        app.setState({settings: {webrtc: {account: {selected: match}}}}, {persist: true})
-                    } else {
-                        const selected = app.utils.copyObject(this.settings.webrtc.account.options[0])
-                        app.setState({settings: {webrtc: {account: {selected}}}}, {persist: true})
+                        Object.assign(app.state.settings.webrtc.account.selected, match)
                     }
-                } else {
-                    if (!options.length) {
-                        // Nothing selected and no options. Select an empty placeholder
-                        // and disable webrtc alltogether.
-                        app.setState({settings: {webrtc: {account: {selected: emptyAccount}, enabled: false}}}, {persist: true})
-                    } else {
-                        // Nothing selected; but there are available options. Select the first option.
-                        const selected = app.utils.copyObject(this.settings.webrtc.account.options[0])
-                        app.setState({settings: {webrtc: {account: {selected}}}}, {persist: true})
-                    }
+                } else if (options.length) {
+                    // Nothing selected; but there are available options. Select the first option.
+                    const selected = app.utils.copyObject(this.settings.webrtc.account.options[0])
+                    Object.assign(app.state.settings.webrtc.account.selected, selected)
                 }
 
                 if (this.v) this.v.$touch()
             },
             /**
-            * Respond to toggling the softphone on and off by unsetting the
-            * selected VoIP account or by selecting the first option by
-            * default.
-            * @param {Object} webrtcEnabled - New checkbox/switch value.
+            * Respond to WebRTC enabled switch by (un)setting the foreground
+            * account state, so that the connection will update when the
+            * whole settings object is pushed to the background.
+            * @param {Object} enabled - New checkbox/switch value.
             */
-            'settings.webrtc.enabled': function(webrtcEnabled) {
+            'settings.webrtc.enabled': function(enabled) {
+                if (enabled) {
+                    const selected = app.utils.copyObject(this.settings.webrtc.account.options[0])
+                    Object.assign(app.state.settings.webrtc.account.selected, selected)
+                } else {
+                    Object.assign(app.state.settings.webrtc.account.selected, emptyAccount)
+                }
+
                 if (this.v) this.v.$touch()
             },
         },

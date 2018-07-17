@@ -4,8 +4,8 @@
         <div class="disabled-placeholder" v-if="callingDisabled && !callOngoing">
             <icon class="disabled-icon" name="dialpad-off"/>
             <div class="disabled-text">
-                <span class="cf">{{$t('calling is momentarily disabled.')}}</span>
-                <span class="cf">{{$t('possible reason')}}:</span>
+                <span class="cf">{{$t('calling service unavailable.')}}</span><br/>
+                <span class="cf">{{$t('please check')}}:</span>
             </div>
             <div class="disabled-reason">
                 <ul>

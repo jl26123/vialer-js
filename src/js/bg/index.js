@@ -141,7 +141,7 @@ class AppBackground extends App {
         this.logger.info(`${this}init connectivity services`)
         if (this.state.app.online) {
             this._platformData()
-            this.modules.calls.connect()
+            this.modules.calls.connect({register: this.state.settings.webrtc.enabled})
         }
 
         this.setState({ui: {menubar: {event: null}}})
@@ -319,8 +319,6 @@ class AppBackground extends App {
     _platformData() {
         this.logger.debug(`${this}refreshing platform api data`)
         for (let module in this.modules) {
-            // Use 'load' instead of 'restore' to refresh the data on
-            // browser restart.
             if (this.modules[module]._platformData) {
                 this.modules[module]._platformData()
             }

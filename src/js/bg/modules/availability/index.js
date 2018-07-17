@@ -66,11 +66,13 @@ class ModuleAvailability extends Module {
     * @returns {Object} - Properties that need to be watched.
     */
     _watchers() {
-        return {
+        let adapterWatchers
+        if (this.adapter) adapterWatchers = this.adapter._watchers()
+        return Object.assign({
             'store.availability.dnd': (dndEnabled) => {
                 this.app.modules.ui.menubarState()
             },
-        }
+        }, adapterWatchers)
     }
 
 

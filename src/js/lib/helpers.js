@@ -45,13 +45,15 @@ function helpers(app) {
         let errors = []
 
         if (!app.state.app.online) errors.push('offline')
-        if (app.state.settings.webrtc.enabled) {
-            if (!app.state.settings.webrtc.media.permission) errors.push('mediaPermission')
-            if (!(app.state.calls.ua.status === 'registered')) errors.push('unregistered')
-            if (!(app.state.settings.webrtc.devices.ready)) errors.push('device')
-        } else {
-            // ConnectAB mode.
-            if (!app.state.calls.ua.status === 'connected') errors.push('disconnected')
+        else {
+            if (app.state.settings.webrtc.enabled) {
+                if (!app.state.settings.webrtc.media.permission) errors.push('mediaPermission')
+                if (!(app.state.calls.ua.status === 'registered')) errors.push('unregistered')
+                if (!(app.state.settings.webrtc.devices.ready)) errors.push('device')
+            } else {
+                // ConnectAB mode.
+                if (!app.state.calls.ua.status === 'connected') errors.push('disconnected')
+            }
         }
 
         if (!errors.length) return false
@@ -127,11 +129,11 @@ function helpers(app) {
                 rejected_b: $t('callee is busy'),
             },
             callingDisabled: {
-                device: $t('selected audio device is not available.').capitalize(),
-                disconnected: $t('you are disconnected from the SIP service.').capitalize(),
-                mediaPermission: $t('go to audio settings and give the browser permission to use your microphone.').capitalize(),
-                offline: $t('you are disconnected from the internet; check your connectivity.').capitalize(),
-                unregistered: $t('not registered at the SIP service; check your connectivity.').capitalize(),
+                device: $t('audio device settings (invalid audio device)').capitalize(),
+                disconnected: $t('service credentials (disconnected)').capitalize(),
+                mediaPermission: $t('browser microphone permission').capitalize(),
+                offline: $t('internet connection (offline)').capitalize(),
+                unregistered: $t('service credentials (registration failed)').capitalize(),
             },
         }
     }

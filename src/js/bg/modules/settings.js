@@ -64,7 +64,7 @@ class ModuleSettings extends Module {
             webrtc: {
                 account: {
                     options: [], // Platform integration provides these choices.
-                    selected: {id: null, password: null, username: null},
+                    selected: {id: null, password: null, uri: null, username: null},
                     status: null,
                 },
                 codecs: {
@@ -177,7 +177,31 @@ class ModuleSettings extends Module {
                 }
                 this.app.emit('bg:telemetry:event', {eventAction: 'toggle', eventLabel: enabled, eventName: 'telemetry', override: true})
             },
-            'store.settings.webrtc.enabled': () => {
+            /**
+            * Deal with (de)selection of an account by connecting or disconnecting
+            * from the Calls endpoint when the involved data changes.
+            */
+            'store.settings.webrtc.account.selected': {
+                deep: true,
+                handler: (account, oldAccount) => {
+                    console.trace("CHANGED:", account.username, oldAccount.username)
+                    if (account.username && account.password) {
+                        this.app.logger.debug(`${this}selected account changed; reconnecting...`)
+                        // Give the data store a chance to update.
+                        Vue.nextTick(() => {
+                            this.app.modules.calls.connect({register: true})
+                        })
+
+                    } else {
+                        this.app.modules.calls.disconnect(false)
+                    }
+                },
+            },
+            /**
+            * Update the extension tab script status.
+            * @param {Boolean} enabled - Whether WebRTC is being enabled.
+            */
+            'store.settings.webrtc.enabled': (enabled) => {
                 this.app.emit('bg:tabs:update_contextmenus', {}, true)
             },
             /**

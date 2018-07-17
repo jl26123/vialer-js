@@ -1,6 +1,5 @@
 <component class="component-voipaccount-picker">
     <!-- Platform integration allows the user to select a voip-account. -->
-
     <Field name="webrtc_account" type="select"
         :disabled="!settings.webrtc.enabled"
         :empty="(status === 'loading') ? `${$t('loading VoIP accounts')}...` : $t('no VoIP accounts')"

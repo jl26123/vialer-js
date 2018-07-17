@@ -130,7 +130,7 @@ class Devices {
 
 
     /**
-    * Validates the sinks and steers the user to the audio settings
+    * Validate the sinks and steers the user to the audio settings
     * page when one of the sinks is incorrectly set.
     */
     async verifySinks() {
@@ -147,8 +147,9 @@ class Devices {
             this.app.setState({settings: {webrtc: {devices: {input, output}}}}, {persist: true})
         } else {
             const sinkChange = this.compareSinks({input, output})
-            this.app.logger.debug(`${this}sink(s) added:\n${sinkChange.added.map((i) => i.name).join('\n')}`)
-            this.app.logger.debug(`${this}sink(s) removed:\n${sinkChange.removed.map((i) => i.name).join('\n')}`)
+            if (sinkChange.added.length) this.app.logger.debug(`${this}sink(s) added:\n${sinkChange.added.map((i) => i.name).join('\n')}`)
+            if (sinkChange.removed.length) this.app.logger.debug(`${this}sink(s) removed:\n${sinkChange.removed.map((i) => i.name).join('\n')}`)
+
             // Always notify about a newly connected device.
             if (sinkChange.added.length) {
                 const message = this.app.$t('new audio device detected.')

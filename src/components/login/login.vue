@@ -46,7 +46,7 @@
     </template>
     <!-- Show username/pw when there are no sessions yet or when a new session is selected.-->
     <template v-else-if="!app.session.available.length || app.session.active">
-        <Field v-if="!availability.voip.endpoint && !sipEndpoint" name="sip_endpoint" type="text"
+        <Field v-if="!availability.voip.endpoint" name="sip_endpoint" type="text"
             :label="$t('SIP endpoint')"
             :model.sync="sipEndpoint"
             :placeholder="$t('SIP endpoint')"/>

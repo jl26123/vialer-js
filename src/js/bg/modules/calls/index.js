@@ -109,9 +109,6 @@ class ModuleCalls extends Module {
         */
         this.app.on('bg:calls:call_terminate', ({callId}) => this.calls[callId].terminate())
 
-        this.app.on('bg:calls:connect', () => {
-            this.connect()
-        })
         this.app.on('bg:calls:disconnect', ({reconnect}) => this.disconnect(reconnect))
 
         this.app.on('bg:calls:dtmf', ({callId, key}) => this.calls[callId].session.dtmf(key))
@@ -362,7 +359,7 @@ class ModuleCalls extends Module {
                 // Reconnection timer logic is performed only here.
                 this.app.logger.debug(`${this}reconnecting to ${this._uaOptions.wsServers} in ${this.retry.timeout} ms`)
                 setTimeout(() => {
-                    this.connect()
+                    this.connect({register: this.app.state.settings.webrtc.enabled})
                 }, this.retry.timeout)
                 this.retry = this.app.timer.increaseTimeout(this.retry)
             }
@@ -381,9 +378,10 @@ class ModuleCalls extends Module {
     * @param {Object} account - The SIP credentials to connect with.
     * @param {Object} account.username - Username to connect with.
     * @param {Object} account.password - Password to connect with.
+    * @param {Object} [register] - Use SIP register.
     * @returns {Object} UA options that are passed to Sip.js
     */
-    __uaOptions(account) {
+    __uaOptions(account, register = true) {
         const settings = this.app.state.settings
 
         // For webrtc this is a voipaccount, otherwise an email address.
@@ -414,9 +412,9 @@ class ModuleCalls extends Module {
         // The voipaccount should be from the same client as the logged-in
         // user, or subscribe information won't work.
         if (settings.webrtc.enabled) {
-            options.register = true
+            options.register = register
         } else {
-            options.register = false
+            options.register = register
         }
 
         return options
@@ -588,17 +586,18 @@ class ModuleCalls extends Module {
             /**
             * Respond to network changes.
             * @param {Boolean} isOnline - Whether we are online now.
-            * @param {Boolean} wasOnline - Whether we were online.
             */
-            'store.app.online': (isOnline, wasOnline) => {
+            'store.app.online': (isOnline) => {
                 if (!isOnline) {
                     this.app.setState({calls: {ua: {status: 'disconnected'}}})
                     // Offline modus is not detected by Sip.js, so we manually disconnect.
+                    this.app.logger.debug(`${this}offline; disconnecting`)
                     this.disconnect()
                 } else {
                     // We are online again, try to reconnect and refresh API data.
                     this.app._platformData()
-                    this.connect()
+                    this.app.logger.debug(`${this}online; connecting`)
+                    this.connect({register: this.app.state.settings.webrtc.enabled})
                 }
             },
             /**
@@ -716,8 +715,9 @@ class ModuleCalls extends Module {
     /**
     * Initialize the SIPJS UserAgent and register its events.
     * @returns {Promise} - Resolves when connected.
+    * @param {Boolean} [register] - Whether to register to the SIP endpoint.
     */
-    connect() {
+    connect({register = true}) {
         const account = this.app.state.settings.webrtc.account.selected
         return new Promise((resolve, reject) => {
             // Reconnect when already connected.
@@ -727,7 +727,7 @@ class ModuleCalls extends Module {
                 return
             }
 
-            this._uaOptions = this.__uaOptions(account)
+            this._uaOptions = this.__uaOptions(account, register)
             this.app.logger.info(`${this}connecting to ${this._uaOptions.wsServers} (register: ${this._uaOptions.register})`)
             // Login with the WebRTC account or platform account.
             if (!this._uaOptions.authorizationUser || !this._uaOptions.password) {

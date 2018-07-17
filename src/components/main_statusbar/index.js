@@ -55,7 +55,11 @@ module.exports = (app) => {
                                     if (this.dnd) title += ` (${this.$t('do not disturb')})`
                                 }
                             } else {
-                                title += this.$t('not registered')
+                                if (this.ua.status === 'connected') {
+                                    title += this.$t('connected')
+                                } else {
+                                    title += this.$t('not registered')
+                                }
                             }
                         } else {
                             if (this.ua.status === 'connected') {
@@ -64,6 +68,12 @@ module.exports = (app) => {
                                 title += this.$t(this.ua.status)
                             }
                         }
+                    }
+
+                    if (this.selected.username) {
+                        title += ` (${this.selected.username})`
+                    } else {
+                        title += ` (${this.$t('no account')})`
                     }
                 }
 
@@ -77,6 +87,7 @@ module.exports = (app) => {
             dnd: 'availability.dnd',
             env: 'env',
             layer: 'ui.layer',
+            selected: 'settings.webrtc.account.selected',
             settings: 'settings',
             ua: 'calls.ua',
             user: 'user',
