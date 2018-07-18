@@ -376,11 +376,12 @@ gulp.task('js-app-bg', 'Generate the extension background entry js.', (done) => 
 
 
 gulp.task('js-app-modules', 'Generate background modules js.', (done) => {
-    const modules = settings.brands[settings.BRAND_TARGET].modules
+    const builtin = settings.brands[settings.BRAND_TARGET].modules.builtin
+    const custom = settings.brands[settings.BRAND_TARGET].modules.custom
 
     Promise.all([
-        helpers.jsModules(settings.BRAND_TARGET, settings.BUILD_TARGET, modules, 'bg'),
-        helpers.jsModules(settings.BRAND_TARGET, settings.BUILD_TARGET, modules, 'fg'),
+        helpers.jsModules(settings.BRAND_TARGET, settings.BUILD_TARGET, Object.assign(builtin, custom), 'bg'),
+        helpers.jsModules(settings.BRAND_TARGET, settings.BUILD_TARGET, Object.assign(builtin, custom), 'fg'),
     ]).then(() => {
         if (settings.LIVERELOAD) livereload.changed('app_modules_bg.js')
         done()
@@ -429,10 +430,24 @@ gulp.task('scss', 'Compile all css.', [], (done) => {
 
 gulp.task('scss-app', 'Generate application css.', () => {
     let sources = [path.join(settings.SRC_DIR, 'components', '**', '*.scss')]
-    for (const custom of settings.brands[settings.BRAND_TARGET].modules.custom.fg) {
-        // The module may include a path to the source file.
-        const moduleName = custom.module.split('/')[0]
-        sources.push(path.join(settings.NODE_PATH, moduleName, 'src', 'components', '**', '*.scss'))
+    const builtin = settings.brands[settings.BRAND_TARGET].modules.builtin
+    const custom = settings.brands[settings.BRAND_TARGET].modules.custom
+
+    const sectionModules = Object.assign(builtin, custom)
+    for (const moduleName of Object.keys(sectionModules)) {
+        const sectionModule = sectionModules[moduleName]
+        if (sectionModule.addons && sectionModule.addons.fg.length) {
+            for (const addon of sectionModule.addons.fg) {
+                const dirName = addon.split('/')[0]
+                gutil.log(`[fg] addon styles for ${moduleName} (${addon})`)
+                sources.push(path.join(settings.NODE_PATH, dirName, 'src', 'components', '**', '*.scss'))
+            }
+        } else if (sectionModule.fg) {
+            const dirName = sectionModule.fg.split('/')[0]
+            gutil.log(`[fg] addon styles for ${moduleName} (${sectionModule.fg})`)
+            // The module may include a path to the source file.
+            sources.push(path.join(settings.NODE_PATH, dirName, 'src', 'components', '**', '*.scss'))
+        }
     }
 
     return helpers.scssEntry(settings.BRAND_TARGET, settings.BUILD_TARGET, 'app', !settings.PRODUCTION, sources)
@@ -472,11 +487,26 @@ gulp.task('sentry-release-remove', 'Remove a Sentry release and all of its artif
 
 gulp.task('templates', 'Compile builtin and module Vue component templates', () => {
     let sources = ['./src/components/**/*.vue']
-    for (const custom of settings.brands[settings.BRAND_TARGET].modules.custom.fg) {
-        // The module may include a path to the source file.
-        const moduleName = custom.module.split('/')[0]
-        sources.push(path.join(settings.NODE_PATH, moduleName, 'src', 'components', '**', '*.vue'))
+    const builtin = settings.brands[settings.BRAND_TARGET].modules.builtin
+    const custom = settings.brands[settings.BRAND_TARGET].modules.custom
+
+    const sectionModules = Object.assign(builtin, custom)
+    for (const moduleName of Object.keys(sectionModules)) {
+        const sectionModule = sectionModules[moduleName]
+        if (sectionModule.addons && sectionModule.addons.fg.length) {
+            for (const addon of sectionModule.addons.fg) {
+                const dirName = addon.split('/')[0]
+                gutil.log(`[fg] addon templates for ${moduleName} (${addon})`)
+                sources.push(path.join(settings.NODE_PATH, dirName, 'src', 'components', '**', '*.vue'))
+            }
+        } else if (sectionModule.fg) {
+            const dirName = sectionModule.fg.split('/')[0]
+            gutil.log(`[fg] custom templates for ${moduleName} (${sectionModule.fg})`)
+            // The module may include a path to the source file.
+            sources.push(path.join(settings.NODE_PATH, dirName, 'src', 'components', '**', '*.vue'))
+        }
     }
+
     gulp.src(sources)
         .pipe(fuet({
             commonjs: false,
@@ -589,21 +619,27 @@ gulp.task('watch', 'Start development server and watch for changes.', () => {
         path.join(__dirname, 'src', 'scss', '**', '*.scss'),
         `!${path.join(__dirname, 'src', 'scss', 'observer.scss')}`,
         path.join(__dirname, 'src', 'components', '**', '*.scss'),
+        path.join(settings.NODE_PATH, 'vjs-addon-*', 'src', 'components', '**', '*.scss'),
+        path.join(settings.NODE_PATH, 'vjs-mod-*', 'src', 'components', '**', '*.scss'),
     ], ['scss-app'])
 
     gulp.watch(path.join(__dirname, 'src', 'scss', 'observer.scss'), ['scss-observer'])
     gulp.watch(path.join(__dirname, 'src', 'scss', 'vendor.scss'), ['scss-vendor'])
 
-    gulp.watch(path.join(__dirname, 'src', 'components', '**', '*.vue'), ['templates'])
+    gulp.watch([
+        path.join(__dirname, 'src', 'components', '**', '*.vue'),
+        path.join(settings.NODE_PATH, 'vjs-addon-*', 'src', 'components', '**', '*.vue'),
+        path.join(settings.NODE_PATH, 'vjs-mod-*', 'src', 'components', '**', '*.vue'),
+    ], ['templates'])
     gulp.watch(path.join(__dirname, 'src', 'js', 'i18n', '**', '*.js'), ['translations'])
     gulp.watch(path.join(__dirname, 'test', '**', '*.js'), ['test'])
 
     gulp.watch([
-        path.join(__dirname, 'src', 'js', '**', 'provider.js'),
-        path.join(settings.NODE_PATH, 'vialer-js-availability-*', 'index.js'),
-        path.join(settings.NODE_PATH, 'vialer-js-user-*', 'index.js'),
-        path.join(settings.NODE_PATH, 'vialer-js-contacts-*', 'index.js'),
-        path.join(settings.NODE_PATH, 'vialer-js-module-*', 'src', '**', '*.js'),
+        // Glob for addons and custom modules includes both component and module js.
+        path.join(settings.NODE_PATH, 'vjs-addon-*', 'src', '**', '*.js'),
+        path.join(settings.NODE_PATH, 'vjs-mod-*', 'src', '**', '*.js'),
+        path.join(settings.NODE_PATH, 'vjs-adapter-*', 'index.js'),
+        path.join(settings.NODE_PATH, 'vjs-provider-*', 'index.js'),
     ], ['js-app-modules'])
 
     // Add linked packages here that are used during development.

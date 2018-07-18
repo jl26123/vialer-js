@@ -15,15 +15,19 @@ const Module = require('../../lib/module')
 class ModuleAvailability extends Module {
     /**
     * @param {AppBackground} app - The background application.
-    * @param {AvailabilityProvider} AvailabilityAdapter - The Availability adapter to use.
+    * @param {Array} addons - List of AvailabilityAddon classes.
     */
-    constructor(app, AvailabilityAdapter) {
+    constructor(app, addons) {
         super(app)
 
-        if (AvailabilityAdapter) {
-            this.adapter = new AvailabilityAdapter(app)
-            this.app.on('bg:availability:platform_data', this.adapter._platformData.bind(this))
-            this.app.on('bg:availability:update', this.adapter._updateAvailability.bind(this))
+        this.addons = []
+
+        this.app.logger.info(`${this}${addons.length} addon(s) found.`)
+        this.addons = addons.map((Addon) => new Addon(app))
+
+        for (const addon of this.addons) {
+            this.app.on('bg:availability:platform_data', addon._platformData.bind(this))
+            this.app.on('bg:availability:update', addon._updateAvailability.bind(this))
         }
     }
 
@@ -35,9 +39,12 @@ class ModuleAvailability extends Module {
     * @returns {Object} The module's store properties.
     */
     _initialState() {
-        let adapterState
-        if (this.adapter) adapterState = this.adapter._initialState()
-        else adapterState = {}
+        let adapterState = {}
+        if (this.addons.length) {
+            for (const addon of this.addons) {
+                Object.assign(adapterState, addon._initialState())
+            }
+        }
 
         return Object.assign({
             available: false,
@@ -56,7 +63,9 @@ class ModuleAvailability extends Module {
     * Call for platform data from the provider.
     */
     async _platformData() {
-        if (this.adapter) this.adapter._platformData()
+        for (const addon of this.addons) {
+            await addon._platformData()
+        }
     }
 
 
@@ -67,7 +76,7 @@ class ModuleAvailability extends Module {
     */
     _watchers() {
         let adapterWatchers
-        if (this.adapter) adapterWatchers = this.adapter._watchers()
+        if (this.adapter && this.adapter._watchers) adapterWatchers = this.adapter._watchers()
         return Object.assign({
             'store.availability.dnd': (dndEnabled) => {
                 this.app.modules.ui.menubarState()

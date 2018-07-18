@@ -58,9 +58,14 @@ class AppForeground extends App {
             Wizard: require('../../components/wizard'),
         }
 
-        for (const custom of opts.modules.custom) {
-            const Module = require(custom.module)
-            this.modules[custom.name] = new Module(this)
+        // Start custom modules.
+        for (const moduleName of Object.keys(opts.modules.custom)) {
+            const customModule = opts.modules.custom[moduleName]
+            if (customModule.fg) {
+                this.logger.info(`${this}init custom module ${moduleName}`)
+                const Module = require(customModule.fg)
+                this.modules[moduleName] = new Module(this)
+            }
         }
 
         for (const name of Object.keys(this.components)) {
@@ -95,7 +100,12 @@ class AppForeground extends App {
                     // Keep track of the popup's visibility status by
                     // opening a long-lived connection to the background.
                     chrome.runtime.connect({name: 'vialer-js'})
+                    // This check is also required in the foreground, since
+                    // the popup opens a popout which is the only way an
+                    // extension can be given permission.
+                    this.__initMedia()
                 }
+
             },
         })
     }
@@ -110,10 +120,10 @@ class AppForeground extends App {
     }
 }
 
-let fgOptions = {
+let options = {
     env,
     modules: {
-        custom: process.env.MOD_CUSTOM_FG,
+        custom: process.env.CUSTOM_MOD,
     },
 }
 
@@ -122,13 +132,13 @@ let fgOptions = {
 if (env.isBrowser) {
     if (env.isExtension) {
         Raven.context(function() {
-            this.fg = new AppForeground(fgOptions)
+            this.fg = new AppForeground(options)
         })
     } else {
         global.AppForeground = AppForeground
-        global.fgOptions = fgOptions
+        global.fgOptions = options
     }
 } else {
     // Use with Node.
-    module.exports = {AppForeground, fgOptions}
+    module.exports = {AppForeground, options}
 }

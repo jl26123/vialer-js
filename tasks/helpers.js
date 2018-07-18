@@ -251,20 +251,20 @@ class Helpers {
                 ANALYTICS_ID: this.settings.brands[brandName].telemetry.analytics_id[buildType],
                 APP_NAME: this.settings.brands[brandName].name.production,
                 BRAND_NAME: brandName,
+
+                BUILTIN_AVAILABILITY_ADDONS: this.settings.brands[brandName].modules.builtin.availability.addons,
+                BUILTIN_CONTACTS_PROVIDERS: this.settings.brands[brandName].modules.builtin.contacts.providers,
+                BUILTIN_USER_ADAPTER: this.settings.brands[brandName].modules.builtin.user.adapter,
+                CUSTOM_MOD: this.settings.brands[brandName].modules.custom,
+
                 DEPLOY_TARGET: this.settings.DEPLOY_TARGET,
-
-                MOD_AVAILABILITY_ADAPTER: this.settings.brands[brandName].modules.builtin.bg.availability.adapter,
-                MOD_CONTACTS_PROVIDERS: this.settings.brands[brandName].modules.builtin.bg.contacts.providers,
-                MOD_CUSTOM_BG: this.settings.brands[brandName].modules.custom.bg,
-                MOD_CUSTOM_FG: this.settings.brands[brandName].modules.custom.fg,
-                MOD_USER_ADAPTER: this.settings.brands[brandName].modules.builtin.bg.user.adapter,
-
                 NODE_ENV: this.settings.NODE_ENV,
                 PLATFORM_URL: this.settings.brands[brandName].permissions,
                 PORTAL_NAME: this.settings.brands[brandName].vendor.portal.name,
                 PORTAL_URL: this.settings.brands[brandName].vendor.portal.url,
                 SENTRY_DSN: this.settings.brands[brandName].telemetry.sentry.dsn,
                 SIP_ENDPOINT: this.settings.brands[brandName].sip_endpoint,
+                STUN: this.settings.brands[brandName].stun,
 
                 VENDOR_NAME: this.settings.brands[brandName].vendor.name,
                 VENDOR_SUPPORT_EMAIL: this.settings.brands[brandName].vendor.support.email,
@@ -281,50 +281,56 @@ class Helpers {
 
 
     /**
-    * Browserify a glob pattern of javascript files.
+    * Browserify custom modules from the Vialer config.
     * Source: https://github.com/garage11/garage11/
     * @param {String} brandName - Brand to produce js for.
     * @param {String} buildType - Target environment to produce js for.
-    * @param {Array} modules - Node modules to build.
-    * @param {String} appType - The application type; 'bg' or 'fg'.
+    * @param {Array} sectionModules - Vialer-js modules to build.
+    * @param {String} appSection - The application type; 'bg' or 'fg'.
     * @param {Function} cb - Callback when the task is done.
     * @returns {Promise} - Resolves when all modules are processed.
     */
-    jsModules(brandName, buildType, modules, appType) {
+    jsModules(brandName, buildType, sectionModules, appSection) {
         return new Promise((resolve) => {
             const b = browserify({
                 basedir: path.join(__dirname, '..'),
                 detectGlobals: false,
             })
-            for (const moduleName of Object.keys(modules.builtin[appType])) {
-                if (modules.builtin[appType][moduleName].providers) {
-                    for (const provider of modules.builtin[appType][moduleName].providers) {
-                        gutil.log(`Builtin ${appType} ${moduleName} provider found: '${provider}'`)
+
+            for (const moduleName of Object.keys(sectionModules)) {
+                const sectionModule = sectionModules[moduleName]
+                // Builtin modules use special markers.
+                if (sectionModule.adapter) {
+                    gutil.log(`[${appSection}] adapter ${moduleName} (${sectionModule.adapter})`)
+                    b.require(sectionModule.adapter)
+                } else if (sectionModule.addons) {
+                    for (const addon of sectionModule.addons[appSection]) {
+                        gutil.log(`[${appSection}] addon ${moduleName} (${addon})`)
+                        b.require(addon)
+                    }
+                } else if (sectionModule.providers) {
+                    for (const provider of sectionModule.providers) {
+                        gutil.log(`[${appSection}] provider ${moduleName} (${provider})`)
                         b.require(provider)
                     }
-                } else if (modules.builtin[appType][moduleName].adapter) {
-                    gutil.log(`Builtin ${appType} ${moduleName} adapter found: '${modules.builtin[appType][moduleName].adapter}'`)
-                    b.require(modules.builtin[appType][moduleName].adapter)
+                } else if (sectionModule[appSection]) {
+                    gutil.log(`[${appSection}] custom module ${moduleName} (${sectionModule[appSection]})`)
+                    // A custom module is limited to a bg or fg section.
+                    b.require(sectionModule[appSection])
                 }
             }
-
-            for (const moduleObj of modules.custom[appType]) {
-                b.require(moduleObj.module)
-                gutil.log(`Custom ${appType} module found: '${moduleObj.module}' (${moduleObj.name})`)
-            }
-
 
             b.bundle()
                 .on('error', notify.onError('Error: <%= error.message %>'))
                 .on('end', () => {
                     resolve()
                 })
-                .pipe(source(`app_${appType}_modules.js`))
+                .pipe(source(`app_${appSection}_modules.js`))
                 .pipe(buffer())
                 .pipe(sourcemaps.init({loadMaps: true}))
                 .pipe(ifElse(this.settings.PRODUCTION, () => minifier()))
                 .pipe(sourcemaps.write('./'))
-                .pipe(size(_extend({title: `app_${appType}_modules.js`}, this.settings.SIZE_OPTIONS)))
+                .pipe(size(_extend({title: `app_${appSection}_modules.js`}, this.settings.SIZE_OPTIONS)))
                 .pipe(gulp.dest(path.join(this.settings.BUILD_DIR, brandName, buildType, 'js')))
         })
     }
