@@ -95,29 +95,7 @@ class AppBackground extends App {
             this.localVideo.addEventListener('canplay', () => this.localVideo.play())
         }
 
-        // Start by initializing builtin modules.
-        for (const builtin of this._modules.builtin) {
-            if (builtin.addons) {
-                this.modules[builtin.name] = new builtin.module(this, builtin.addons.bg.map((addon) => require(addon)))
-            } else if (builtin.providers) {
-                const providers = builtin.providers.map((mod) => require(mod))
-                this.modules[builtin.name] = new builtin.module(this, providers)
-            } else if (builtin.adapter) {
-                this.modules[builtin.name] = new builtin.module(this, require(builtin.adapter))
-            } else {
-                // Other modules without any config.
-                this.modules[builtin.name] = new builtin.module(this, null)
-            }
-        }
-
-        // Then process custom modules.
-        for (const moduleName of Object.keys(this._modules.custom)) {
-            const customModule = this._modules.custom[moduleName]
-            if (customModule.bg) {
-                const Module = require(customModule.bg)
-                this.modules[moduleName] = new Module(this)
-            }
-        }
+        this.__loadModules(this._modules)
 
         this.api = new Api(this)
         await this.__initStore()

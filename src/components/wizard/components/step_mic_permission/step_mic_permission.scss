@@ -2,13 +2,14 @@
 @import "vialer-js/lib/variables";
 
 .component-step-mic-permission {
-    &.step {
-        .step-description {
-            padding-bottom: $spacer;
-        }
 
-        .progress {
-            margin: $spacer * 2 0;
-        }
+    .component-mic-permission {
+        margin-bottom: $spacer;
+        margin-top: $spacer * 2;
     }
+
+    .after-permission-text {
+        margin-bottom: $spacer * 2;
+    }
+
 }

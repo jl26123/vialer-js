@@ -24,13 +24,14 @@
         }
 
         .step-description {
-            color: $grey-color-darker;
+            color: $grey-color-dark;
             padding: $spacer * 2 0;
             text-align: center;
             width: 75%;
         }
 
         .step-container {
+            color: $grey-color-dark;
             width: 75%;
         }
     }
@@ -52,10 +53,6 @@
                 background: $brand-color;
             }
         }
-    }
-
-    .buttons {
-        margin-bottom: $spacer * 4;
     }
 
 }

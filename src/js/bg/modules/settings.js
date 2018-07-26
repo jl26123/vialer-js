@@ -105,7 +105,17 @@ class ModuleSettings extends Module {
             },
             wizard: {
                 completed: false,
-                step: 0,
+                // Start from th first wizard step.
+                steps: {
+                    options: [
+                        {name: 'WizardStepWelcome', ready: true},
+                        {name: 'WizardStepTelemetry', ready: true}, // hide the next button.
+                        {name: 'WizardStepVoipaccount', ready: false},
+                        {name: 'WizardStepMicPermission', ready: false},
+                        {name: 'WizardStepDevices', ready: false},
+                    ],
+                    selected: {name: 'WizardStepWelcome', ready: true},
+                },
             },
         }
     }

@@ -28,9 +28,13 @@ class App extends Skeleton {
         // Use shorthand naming for the event target, because
         // the script context is part of the event name as a
         // convention.
-        if (this.env.role.bg) this._emitTarget = 'fg'
-        else if (this.env.role.fg) this._emitTarget = 'bg'
-        else throw new Error(`invalid app role: ${this.env.role}`)
+        if (this.env.role.bg) {
+            this._emitTarget = 'fg'
+            this._appSection = 'bg'
+        } else if (this.env.role.fg) {
+            this._emitTarget = 'bg'
+            this._appSection = 'fg'
+        } else throw new Error(`invalid app role: ${this.env.role}`)
     }
 
 
@@ -52,7 +56,8 @@ class App extends Skeleton {
 
 
     /**
-    * Initialize media access and system sounds.
+    * Silently try to initialize media access, unless the error is not
+    * related to a lack of permission.
     */
     async __initMedia() {
         // Check media permission at the start of the bg/fg.
@@ -61,17 +66,16 @@ class App extends Skeleton {
                 await navigator.mediaDevices.getUserMedia(this._getUserMediaFlags())
                 this.setState({settings: {webrtc: {media: {permission: true}}}})
             } catch (err) {
-                this.logger.error(err)
                 // There are no devices at all. Spawn a warning.
                 if (err.message === 'Requested device not found') {
                     if (this.env.role.fg) {
                         this.notify({icon: 'warning', message: this.$t('no audio devices found.'), type: 'warning'})
                     }
+                    throw new Error(err)
                 }
 
-                // This error also may be triggered when there are no
-                // devices at all. The browser sometime__initViewModels has issues
-                // finding any devices.
+                // This error also may be triggered when there are no devices
+                // at all. The browser sometimes has issues finding any devices.
                 this.setState({settings: {webrtc: {media: {permission: false}}}})
             }
         } else {
@@ -160,6 +164,37 @@ class App extends Skeleton {
     */
     __isObject(item) {
         return (item && typeof item === 'object' && !Array.isArray(item))
+    }
+
+
+    /**
+    * Loads foreground or background modules.
+    * @param {Object} moduleList - See .vialer-jsrc.example for the format.
+    */
+    __loadModules(moduleList) {
+        // Start by initializing builtin modules.
+        for (const builtin of moduleList.builtin) {
+            if (builtin.addons) {
+                this.modules[builtin.name] = new builtin.module(this, builtin.addons[this._appSection].map((addon) => require(addon)))
+            } else if (builtin.providers) {
+                const providers = builtin.providers.map((mod) => require(mod))
+                this.modules[builtin.name] = new builtin.module(this, providers)
+            } else if (builtin.adapter) {
+                this.modules[builtin.name] = new builtin.module(this, require(builtin.adapter))
+            } else {
+                // Other modules without any config.
+                this.modules[builtin.name] = new builtin.module(this, null)
+            }
+        }
+
+        // Then process custom modules.
+        for (const moduleName of Object.keys(this._modules.custom)) {
+            const customModule = this._modules.custom[moduleName]
+            if (customModule[this._appSection]) {
+                const Module = require(customModule[this._appSection])
+                this.modules[moduleName] = new Module(this)
+            }
+        }
     }
 
 

@@ -26,8 +26,8 @@ class ModuleAvailability extends Module {
         this.addons = addons.map((Addon) => new Addon(app))
 
         for (const addon of this.addons) {
-            this.app.on('bg:availability:platform_data', addon._platformData.bind(this))
-            this.app.on('bg:availability:update', addon._updateAvailability.bind(this))
+            if (addon._platformData) this.app.on('bg:availability:platform_data', addon._platformData.bind(this))
+            if (addon._updateAvailability) this.app.on('bg:availability:update', addon._updateAvailability.bind(this))
         }
     }
 
@@ -75,13 +75,16 @@ class ModuleAvailability extends Module {
     * @returns {Object} - Properties that need to be watched.
     */
     _watchers() {
-        let adapterWatchers
-        if (this.adapter && this.adapter._watchers) adapterWatchers = this.adapter._watchers()
+        let addonWatchers = {}
+        for (const addon of this.addons) {
+            if (addon._watchers) Object.assign(addonWatchers, this.adapter._watchers())
+        }
+
         return Object.assign({
             'store.availability.dnd': (dndEnabled) => {
                 this.app.modules.ui.menubarState()
             },
-        }, adapterWatchers)
+        }, addonWatchers)
     }
 
 

@@ -3,8 +3,8 @@
 */
 class Module extends EventEmitter {
     /**
-    * Base Module constructor.
-    * @param {AppBackground} app - The background application.
+    * Foreground Module constructor.
+    * @param {AppForeground} app - The foreground application.
     */
     constructor(app) {
         super(app)

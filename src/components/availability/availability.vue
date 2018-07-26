@@ -8,5 +8,8 @@
         :label="$t('do not disturb')"
         :model.sync="dnd"/>
 
-    <!-- Load addons here -->
+    <!-- Load additional availability addons. -->
+    <template v-for="addon of addons">
+        <component v-bind:is="addon"></component>
+    </template>
 </component>

@@ -1,11 +1,15 @@
 <component class="component-step-welcome">
-    <header>{{greeting}}</header>
+    <header class="cf">{{greeting}}</header>
 
-    <div class="step-description cf">
-        {{$t('welcome to')}} {{app.name}}.<br/>
-        <span class="cf">{{$t('you can now receive, transfer and create calls straight from your browser.')}}</span><br/>
-        <span class="cf">{{$t('let\'s get you set up!')}}</span>
+    <div class="step-description">
+        <span class="cf">{{$t('welcome to the')}} {{app.name}}!</span><br/>
+        <span class="cf">{{$t('with the {name} you can conveniently place, receive and transfer calls straight from your browser. To get started with the {name}, we need to ask you a few setup questions first.', {name: app.name})}}</span>
+
     </div>
 
     <slot name="progress"></slot>
+
+    <div class="buttons is-centered" v-if="selected.ready !== null">
+        <button type="button" class="button is-primary cf test-wizard-button-next" :disabled="!selected.ready" @click="stepNext()">{{$t('let\'s start')}}</button>
+    </div>
 </component>

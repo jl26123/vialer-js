@@ -45,6 +45,7 @@ class AppForeground extends App {
             Calls: require('../../components/calls'),
             CallSwitch: require('../../components/call_switch'),
             Contacts: require('../../components/contacts'),
+            DevicePicker: require('../../components/device_picker'),
             Field: require('../../components/field'),
             Login: require('../../components/login'),
             MainCallBar: require('../../components/main_callbar'),
@@ -58,15 +59,7 @@ class AppForeground extends App {
             Wizard: require('../../components/wizard'),
         }
 
-        // Start custom modules.
-        for (const moduleName of Object.keys(opts.modules.custom)) {
-            const customModule = opts.modules.custom[moduleName]
-            if (customModule.fg) {
-                this.logger.info(`${this}init custom module ${moduleName}`)
-                const Module = require(customModule.fg)
-                this.modules[moduleName] = new Module(this)
-            }
-        }
+        this.__loadModules(opts.modules)
 
         for (const name of Object.keys(this.components)) {
             Vue.component(name, this.components[name](this))
@@ -123,6 +116,13 @@ class AppForeground extends App {
 let options = {
     env,
     modules: {
+        builtin: [
+            {
+                addons: process.env.BUILTIN_AVAILABILITY_ADDONS,
+                module: require('./modules/availability'),
+                name: 'availability',
+            },
+        ],
         custom: process.env.CUSTOM_MOD,
     },
 }

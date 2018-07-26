@@ -22,7 +22,7 @@ class UserAdapter {
         this.app.setState({
             // The `installed` and `updated` flag are toggled off after login.
             app: {installed: false, updated: false},
-            ui: {layer: 'settings'},
+            ui: {layer: 'calls'},
             user: {username},
         }, {encrypt: false, persist: true})
 

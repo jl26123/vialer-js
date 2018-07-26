@@ -7,27 +7,37 @@
                 <Soundmeter class="soundmeter"/>
             </div>
             <div class="mic-popout-instructions" v-else>
-                <icon name="video-cam" class="video-cam"/>
-                <i class="check"><icon name="check"/></i>
-                <em class="help cf">{{$t('the browser already has permission to use your computer\'s microphone.')}}</em>
+                <div class="browser-bar video-cam-enabled">
+                    <icon name="video-cam" class="video-cam"/>
+                    <i class="check"><icon name="check"/></i>
+                </div>
+
+                <div class="success-message cf">
+                    <span class="cf">{{$t('excellent')}}!</span><br/>
+                    <span class="cf">{{$t('the browser has access to your microphone.')}}</span>
+                </div>
             </div>
         </template>
 
-        <!-- Give the user instructions how to enable the microphone in the popout -->
-        <div class="mic-popout-instructions" v-else-if="!settings.webrtc.media.permission && env.isPopout">
-            <icon name="video-cam-disabled" class="video-cam"/>
-            <p>
-                <span class="cf">{{$t('inspect the browser navigation bar for microphone access.')}}</span>
-                <span class="cf">{{$t('close this tab afterwards.')}}</span>
-            </p>
-        </div>
-
-        <span v-if="!settings.webrtc.media.permission && !env.isPopout">
+        <div v-else-if="env.isExtension && env.isPopout">
             <div class="mic-popout-notice cf">{{$t('this action will open a new tab to display the request.')}}</div>
-            <a class="button is-primary" @click="openPopoutView">
+            <a class="button is-info" @click="openPopoutView">
                 <span class="icon is-small"><icon name="microphone"/></span>
                 <span class="cf">{{$t('give permission')}}</span>
             </a>
-        </span>
+        </div>
+
+        <!-- Give the user instructions how to enable the microphone in the popout -->
+        <div class="mic-popout-instructions" v-else>
+            <div class="browser-bar video-cam-disabled">
+                <icon name="video-cam-disabled" class="video-cam"/>
+            </div>
+            <ol>
+                <li><span class="cf">{{$t('click the camera icon in the navigation bar.')}}</span></li>
+                <li><span class="cf">{{$t('grant permission to use the microphone.')}}</span></li>
+                <li v-if="env.isExtension"><span class="cf">{{$t('close this tab.')}}</span></li>
+                <li v-else><span class="cf">{{$t('refresh this page.')}}</span></li>
+            </ol>
+        </div>
     </div>
 </component>

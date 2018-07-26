@@ -117,7 +117,7 @@ class ModuleContacts extends Module {
     */
     async subscribe() {
         const contacts = Object.keys(this.contacts)
-        this.app.logger.info(`${this}<platform> subscribe SIP presence to ${contacts.length} contacts`)
+        this.app.logger.info(`${this}<platform> presence updates from ${contacts.length} contacts`)
         for (let contactId of contacts) {
             const contact = this.contacts[contactId]
             if (contact && ['registered', 'connected'].includes(this.app.state.calls.ua.status)) {

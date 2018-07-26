@@ -177,3 +177,41 @@ video {
 ::-webkit-scrollbar-thumb {
     background: $brand-color;
 }
+
+
+ol {
+    counter-reset: default-counter;
+    list-style: none;
+
+    li {
+        counter-increment: default-counter;
+        font-size: 0.9rem;
+        margin: 0.25rem;
+        padding: $spacer / 2;
+        text-align: left;
+        width: 100%;
+
+        &::before {
+            background: $brand-color;
+            border-radius: 50%;
+            color: $white-color;
+            content: counter(default-counter);
+            display: inline-block;
+            font-size: 0.8rem;
+            font-weight: bold;
+            height: $spacer * 2.5;
+            line-height: $spacer * 2.5;
+            margin-right: $spacer * 1.5;
+            text-align: center;
+            width: $spacer * 2.5;
+        }
+    }
+
+    ol li::before {
+        background: lighten($brand-color, 10%);
+
+        ol li::before {
+            background: lighten($brand-color, 20%);
+        }
+    }
+}

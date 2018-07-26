@@ -10,33 +10,65 @@
     }
 
     .mic-popout-instructions {
+        align-items: center;
+        display: flex;
+        flex-direction: column;
         position: relative;
 
-        .video-cam {
-            @include icon-size($spacer * 4);
-            margin-bottom: $spacer;
-            path[pid="0"] {fill: $primary-color;}
-            path[pid="1"] {fill: $white-color;}
-            rect[pid="2"] {fill: $red-color;}
-        }
-
-        .check {
-            @include icon-size($spacer * 2.5);
+        .browser-bar {
             align-items: center;
-            background: $green-color;
-            border-radius: 50%;
-            display: inline-flex;
-            flex-direction: column;
+            background: $grey-color-lighter;
+            border-bottom-right-radius: $spacer * 2.5;
+            border-top-right-radius: $spacer * 2.5;
+            display: flex;
+            height: $spacer * 5;
             justify-content: center;
-            margin-left: -$spacer * 2;
-            margin-top: $spacer * 2;
-            position: absolute;
+            line-height: $spacer * 6;
+            margin-bottom: $spacer * 2;
+            vertical-align: middle;
+            width: $spacer * 8;
 
-            svg {
-                @include icon-size($spacer * 1.5);
-                fill: $white-color;
+            .video-cam {
+                @include icon-size($spacer * 4);
+                fill: $black;
             }
 
+            &.video-cam-disabled {
+                .video-cam {
+                    path[pid="1"] {fill: $white-color;}
+                    rect[pid="2"] {fill: $red-color;}
+                }
+            }
+
+            &.video-cam-enabled {
+                position: relative;
+
+                .video-cam {
+                    & + .check {
+                        @include icon-size($spacer * 3.5);
+                        align-items: center;
+                        background: $green-color;
+                        border-radius: 50%;
+                        bottom: -$spacer;
+                        display: inline-flex;
+                        flex-direction: column;
+                        justify-content: center;
+                        position: absolute;
+                        right: -$spacer * 1.5;
+
+                        svg {
+                            @include icon-size($spacer * 1.5);
+                            fill: $white-color;
+                        }
+                    }
+                }
+            }
+        }
+
+        .success-message {
+            color: $brand-color;
+            font-size: 0.9rem;
+            font-weight: 500;
         }
     }
 

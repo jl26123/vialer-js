@@ -6,18 +6,6 @@ module.exports = (app) => {
     * @memberof fg.components
     */
     const Settings = {
-        data: function() {
-            return {
-                playing: {
-                    headsetOutput: false,
-                    ringOutput: false,
-                    speakerOutput: false,
-                },
-            }
-        },
-        destroyed: function() {
-            clearInterval(this.soundMeterInterval)
-        },
         methods: Object.assign({
             classes: function(block, modifier) {
                 let classes = {}
@@ -26,28 +14,6 @@ module.exports = (app) => {
                     if (modifier === this.tabs.active) classes['is-active'] = true
                 }
                 return classes
-            },
-            playSound: function(soundName, sinkTarget) {
-                this.playing[sinkTarget] = true
-
-                if (app.sounds[soundName].off) {
-                    // Prevent frenzy-clicking the test-audio button.
-                    if (app.sounds[soundName].playing) return
-
-                    app.sounds[soundName].play(false, this.devices.sinks[sinkTarget])
-                    app.sounds[soundName].off('stop').on('stop', () => {
-                        this.playing[sinkTarget] = false
-                    })
-                } else {
-                    // Prevent frenzy-clicking the test-audio button.
-                    if (app.sounds[soundName].started) return
-
-                    app.sounds[soundName].play(this.devices.sinks[sinkTarget])
-                    setTimeout(() => {
-                        app.sounds[soundName].stop()
-                        this.playing[sinkTarget] = false
-                    }, 2500)
-                }
             },
             save: function(e) {
                 // Strip properties from the settings object that we don't
@@ -81,7 +47,6 @@ module.exports = (app) => {
             vendor: 'app.vendor',
         },
         validations: function() {
-            const sinkErrormessage = app.$t('selected audio device is not available.')
             let validations = {
                 settings: {
                     platform: {
@@ -94,70 +59,17 @@ module.exports = (app) => {
                         domain: app.helpers.validators.domain,
                         required: v.required,
                     },
-                    webrtc: {
-                        devices: {
-                            sinks: {
-                                headsetInput: {
-                                    valid: {
-                                        customValid: Vuelidate.withParams({
-                                            message: sinkErrormessage,
-                                            type: 'customValid',
-                                        }, (valid, headsetInput) => {
-                                            if (!this.settings.webrtc.enabled) return true
-                                            const storedDevice = this.devices.input.find((i) => i.id === headsetInput.id)
-                                            if (storedDevice) return storedDevice.valid
-                                            return true
-                                        }),
-                                    },
-                                },
-                                headsetOutput: {
-                                    valid: {
-                                        customValid: Vuelidate.withParams({
-                                            message: sinkErrormessage,
-                                            type: 'customValid',
-                                        }, (valid, headsetOutput) => {
-                                            if (!this.settings.webrtc.enabled) return true
-                                            const storedDevice = this.devices.output.find((i) => i.id === headsetOutput.id)
-                                            if (storedDevice) return storedDevice.valid
-                                            return false
-                                        }),
-                                    },
-                                },
-                                ringOutput: {
-                                    valid: {
-                                        customValid: Vuelidate.withParams({
-                                            message: sinkErrormessage,
-                                            type: 'customValid',
-                                        }, (valid, ringOutput) => {
-                                            if (!this.settings.webrtc.enabled) return true
-                                            const storedDevice = this.devices.output.find((i) => i.id === ringOutput.id)
-                                            if (storedDevice) return storedDevice.valid
-                                            return true
-                                        }),
-                                    },
-                                },
-                            },
-                        },
-                    },
                 },
             }
             // Add the validation that is shared with step_voipaccount, but
             // only if the user is supposed to choose between voiapccount options.
             if (this.availability.voip.selection) {
-                validations.settings.webrtc.account = app.helpers.sharedValidations.bind(this)().settings.webrtc.account
+                validations.settings.webrtc = {account: app.helpers.sharedValidations.bind(this)().settings.webrtc.account}
             }
 
             return validations
         },
         watch: {
-            /**
-            * Change the sink for the ringtone when the
-            * selected ringtone device changes.
-            * @param {String} newSinkId - The selected sink for sounds.
-            */
-            'devices.sounds.selected.id': function(newSinkId) {
-                if (newSinkId) app.sounds.ringTone.audio.setSinkId(newSinkId)
-            },
             /**
             * Reactively change the language when the select updates.
             * @param {Object} language - Selected language.

@@ -1,10 +1,10 @@
 /**
 * Base class that each AvailabilityProvider must inherit from.
 */
-class AvailabilityAdapter {
+class AvailabilityAddon {
     constructor(app) {
         this.app = app
     }
 }
 
-module.exports = AvailabilityAdapter
+module.exports = AvailabilityAddon

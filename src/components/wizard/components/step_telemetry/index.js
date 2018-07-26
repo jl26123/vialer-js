@@ -1,5 +1,4 @@
-module.exports = (app) => {
-
+module.exports = (app, shared) => {
     /**
     * @memberof fg.components
     */
@@ -7,15 +6,16 @@ module.exports = (app) => {
         computed: app.helpers.sharedComputed(),
         methods: Object.assign({
             toggleTelemetry: function(enabled) {
-                // Go to the next wizard step manually, because the
-                // wizard next button isn't used within this step.
-                app.setState({settings: {telemetry: {enabled}, wizard: {step: this.step += 1}}}, {persist: true})
+                app.setState({settings: {telemetry: {enabled}}}, {persist: true})
+                this.stepNext()
             },
-        }, app.helpers.sharedMethods()),
+        }, shared().methods),
         render: templates.wizard_step_telemetry.r,
         staticRenderFns: templates.wizard_step_telemetry.s,
         store: {
-            step: 'settings.wizard.step',
+            app: 'app',
+            options: 'settings.wizard.steps.options',
+            selected: 'settings.wizard.steps.selected',
             telemetry: 'settings.telemetry',
         },
     }
