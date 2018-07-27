@@ -1,14 +1,17 @@
 <component class="component-device-picker">
-    <Field v-if="settings.webrtc.media.permission" name="input_device" type="select"
+
+    <Field name="input_device" type="select"
+        :disabled="!permission"
         :label="$t('headset audio input')"
         :model.sync="devices.sinks.headsetInput"
         :options="devices.input"
         :validation="$v.settings.webrtc.devices.sinks.headsetInput.valid">
-        <MicPermission slot="select-extra" v-if="$v.settings.webrtc.devices.sinks.headsetInput.valid.customValid"/>
+        <MicPermission slot="select-after" v-if="$v.settings.webrtc.devices.sinks.headsetInput.valid.customValid"/>
     </Field>
 
-    <Field v-if="settings.webrtc.media.permission" name="output_device" type="select"
-        :help="$v.settings.webrtc.devices.sinks.headsetOutput.valid.customValid ? $t('does the audio play on the preferred device?') : ''"
+    <Field name="output_device" type="select"
+        :disabled="!permission"
+        :help="$v.settings.webrtc.devices.sinks.headsetOutput.valid.customValid ? $t('does the sound test play on the expected device?') : ''"
         :label="$t('headset audio output')"
         :model.sync="devices.sinks.headsetOutput"
         :options="devices.output"
@@ -19,8 +22,9 @@
         </button>
     </Field>
 
-    <Field v-if="settings.webrtc.media.permission" name="sounds_device" type="select"
-        :help="$v.settings.webrtc.devices.sinks.ringOutput.valid.customValid ? $t('does the audio play on the preferred device?') : ''"
+    <Field name="sounds_device" type="select"
+        :disabled="!permission"
+        :help="$v.settings.webrtc.devices.sinks.ringOutput.valid.customValid ? $t('does the sound test play on the expected device?') : ''"
         :label="`${$t('ringtone audio')} ${$t('output')}`"
         :model.sync="devices.sinks.ringOutput"
         :options="devices.output"

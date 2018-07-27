@@ -2,7 +2,7 @@ module.exports = (app) => {
     /**
     * @memberof fg.components
     */
-    const VoipaccountPicker = {
+    const AccountPicker = {
         computed: Object.assign({
             validationField: function() {
                 if (this.status === 'loading') return null
@@ -10,7 +10,7 @@ module.exports = (app) => {
             },
         }, app.helpers.sharedComputed()),
         methods: Object.assign({
-            refreshVoipaccounts: function() {
+            refreshAccounts: function() {
                 // Call the API endpoint that is responsible for updating
                 // the user's voipaccount list.
                 app.emit('bg:availability:platform_data')
@@ -33,8 +33,8 @@ module.exports = (app) => {
             label: {default: ''},
             v: {default: null}, // Optionally pass a Vuelidate validator.
         },
-        render: templates.voipaccount_picker.r,
-        staticRenderFns: templates.voipaccount_picker.s,
+        render: templates.account_picker.r,
+        staticRenderFns: templates.account_picker.s,
         store: {
             app: 'app',
             selected: 'settings.webrtc.account.selected',
@@ -62,9 +62,10 @@ module.exports = (app) => {
                     if (match) {
                         Object.assign(app.state.settings.webrtc.account.selected, match)
                     }
-                } else if (options.length && app.state.settings.webrtc.enabled) {
-                    // Nothing selected; but there are available options.
-                    // Select the first option when WebRTC is enabled.
+                } else if (options.length && (app.state.settings.webrtc.enabled || app.state.settings.webrtc.toggle)) {
+                    // Nothing selected; but there are available options and
+                    // we are currently in either a WebRTC modus or about to
+                    // go to WebRTC modus: Select the first available option.
                     const selected = app.utils.copyObject(this.settings.webrtc.account.options[0])
                     Object.assign(app.state.settings.webrtc.account.selected, selected)
                 }
@@ -72,7 +73,7 @@ module.exports = (app) => {
                 if (this.v) this.v.$touch()
             },
             /**
-            * Preset the first available account when WebRTC is switched on.
+            * Preselect the first available account when WebRTC is switched on.
             * A similar background watcher handles resetting the account when
             * WebRTC is turned off.
             * @param {Object} enabled - New checkbox/switch value.
@@ -88,5 +89,5 @@ module.exports = (app) => {
         },
     }
 
-    return VoipaccountPicker
+    return AccountPicker
 }

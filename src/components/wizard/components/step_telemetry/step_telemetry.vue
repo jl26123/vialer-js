@@ -15,6 +15,7 @@
 
     <slot name="progress"></slot>
 
+    <button class="button cf back" @click="stepBack()">{{$t('back')}}</button>
     <div class="buttons is-centered">
         <button class="button cf test-step-telemetry-button-no" @click="toggleTelemetry(false)">
             {{$t('no thanks')}}
@@ -24,6 +25,6 @@
         </button>
     </div>
 
-    <button class="button cf back" @click="stepBack()">{{$t('back')}}</button>
+
 
 </component>

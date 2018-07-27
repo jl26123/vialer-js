@@ -11,6 +11,7 @@ module.exports = (app) => {
         render: templates.mic_permission.r,
         staticRenderFns: templates.mic_permission.s,
         store: {
+            app: 'app',
             env: 'env',
             settings: 'settings',
         },

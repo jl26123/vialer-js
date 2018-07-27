@@ -49,6 +49,7 @@ module.exports = (app) => {
             availability: 'availability',
             devices: 'settings.webrtc.devices',
             env: 'env',
+            permission: 'settings.webrtc.media.permission',
             ringtones: 'settings.ringtones',
             settings: 'settings',
             user: 'user',

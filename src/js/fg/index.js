@@ -38,6 +38,7 @@ class AppForeground extends App {
         */
         this.components = {
             About: require('../../components/about'),
+            AccountPicker: require('../../components/account_picker'),
             Activity: require('../../components/activity'),
             Availability: require('../../components/availability'),
             Call: require('../../components/call'),
@@ -55,7 +56,6 @@ class AppForeground extends App {
             Notifications: require('../../components/notifications'),
             Settings: require('../../components/settings'),
             Soundmeter: require('../../components/soundmeter'),
-            VoipaccountPicker: require('../../components/voipaccount_picker'),
             Wizard: require('../../components/wizard'),
         }
 

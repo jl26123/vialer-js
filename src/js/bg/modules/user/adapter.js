@@ -19,14 +19,14 @@ class UserAdapter {
         await this.app.__initSession({password, username})
         this.app.__storeWatchers(true)
 
-        this.app.setState({
+        await this.app.setState({
             // The `installed` and `updated` flag are toggled off after login.
             app: {installed: false, updated: false},
             ui: {layer: 'calls'},
             user: {username},
         }, {encrypt: false, persist: true})
 
-        this.app.setState({user: userFields}, {persist: true})
+        await this.app.setState({user: userFields}, {persist: true})
     }
 
 
@@ -34,23 +34,19 @@ class UserAdapter {
     * Remove any stored session key, but don't delete the salt.
     * This will render the cached and stored state useless.
     */
-    logout() {
+    async logout() {
         this.app.logger.info(`${this}logging out and cleaning up state`)
 
         this.app.__storeWatchers(false)
 
-        this.app.setState({
-            app: {vault: {key: null, unlocked: false}},
-            user: {authenticated: false},
-        }, {encrypt: false, persist: true})
+        await this.app.setSession(null, {}, {logout: true})
 
         // Remove credentials from basic auth.
         this.app.api.setupClient()
         // Disconnect without reconnect attempt.
         this.app.modules.calls.disconnect(false)
-
         this.app.emit('bg:user:logged_out', {}, true)
-        this.app.setSession('new')
+
 
         // Fallback to the browser language or to english.
         const languages = this.app.state.settings.language.options.map(i => i.id)

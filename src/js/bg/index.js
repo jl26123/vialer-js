@@ -31,6 +31,8 @@ class AppBackground extends App {
     constructor(opts) {
         super(opts)
 
+        window.requestAnimationFrame(this.__queueNextTick.bind(this))
+
         // Allow context debugging during development.
         // Avoid leaking this global in production mode!
         if (!(process.env.NODE_ENV === 'production')) global.bg = this
@@ -39,7 +41,7 @@ class AppBackground extends App {
         this.crypto = new Crypto(this)
         this.timer = new Timer(this)
 
-        this.__mergeQueue = {}
+        this.__mergeQueue = []
         this.__mergeIndex = 0
 
         this._watchers = []
@@ -48,7 +50,9 @@ class AppBackground extends App {
         this.on('bg:get_state', ({callback}) => callback(JSON.stringify(this.state)))
         this.on('bg:refresh_api_data', this._platformData.bind(this))
         // Calls to setState from the foreground.
-        this.on('bg:set_state', (...args) => this.__mergeStateQueue(...args))
+        this.on('bg:set_state', (...args) => {
+            this.__mergeStateQueue(...args)
+        })
 
         this.__init()
     }
@@ -228,8 +232,7 @@ class AppBackground extends App {
     * be processed one at a time.
     * @param {Object} options - See the parameter description of super.
     */
-    async __mergeState({action = 'upsert', encrypt = true, index, path = null, persist = false, reject, resolve, state}) {
-        this.__mergeQueue[index].status = 1
+    async __mergeState({action = 'upsert', encrypt = true, path = null, persist = false, reject, resolve, state, item}) {
         const storeEndpoint = this.state.app.session.active
         // This could happen when an action is still queued, while the user
         // is logging out at the same moment. The action is then ignored.
@@ -238,9 +241,8 @@ class AppBackground extends App {
         super.__mergeState({action, encrypt, path, persist, state})
 
         if (!persist) {
-            this.__mergeQueue[index].status = 2
+            item.status = 2
             resolve()
-            if (this.__mergeQueue[index + 1]) this.__mergeQueue[index + 1].action()
             return
         }
 
@@ -270,11 +272,10 @@ class AppBackground extends App {
         }
 
         this.store.set(storeKey, storeState)
-        // The item may already been cleaned up.
-        if (this.__mergeQueue[index]) this.__mergeQueue[index].status = 2
-        resolve()
 
-        if (this.__mergeQueue[index + 1]) this.__mergeQueue[index + 1].action()
+        // The item may be cleaned up.
+        item.status = 2
+        resolve()
     }
 
 
@@ -286,28 +287,25 @@ class AppBackground extends App {
     */
     __mergeStateQueue({action, encrypt, path, persist, state}) {
         return new Promise((resolve, reject) => {
-            const index = this.__mergeIndex
-            this.__mergeIndex += 1
-            let startQueue = false
-            let startItem = null
-
-            this.__mergeQueue[index] = {
-                action: () => this.__mergeState({action, encrypt, index, path, persist, reject, resolve, state}),
+            this.__mergeQueue.push({
+                action: (item) => this.__mergeState({action, encrypt, item, path, persist, reject, resolve, state}),
                 status: 0,
-            }
-
-            for (const i of Object.keys(this.__mergeQueue)) {
-                // A queue item is already executing.
-                if (this.__mergeQueue[i].status === 0) {
-                    startQueue = true
-                    if (!startItem) startItem = i
-                } else if (this.__mergeQueue[i].status === 2) {
-                    delete this.__mergeQueue[i]
-                }
-            }
-
-            if (startQueue) this.__mergeQueue[startItem].action()
+            })
         })
+    }
+
+
+    __queueNextTick() {
+        if (this.__mergeQueue.length) {
+            const item = this.__mergeQueue[0]
+            if (item.status === 0) {
+                item.status = 1
+                item.action(item)
+            } else if (this.__mergeQueue[0].status === 2) {
+                this.__mergeQueue.shift()
+            }
+        }
+        window.requestAnimationFrame(this.__queueNextTick.bind(this))
     }
 
 
@@ -400,7 +398,7 @@ class AppBackground extends App {
             }
         }
 
-        this.setState(state)
+        await this.setState(state)
     }
 
 
@@ -424,12 +422,19 @@ class AppBackground extends App {
     * @param {String} sessionId - The identifier of the session.
     * @param {Object} keptState - State that needs to survive.
     */
-    setSession(sessionId = 'new', keptState = {}) {
+    async setSession(sessionId, keptState = {}, {logout = false} = {}) {
         let session = this.store.findSessions()
 
         if (sessionId === 'active') {
-            sessionId = session.active ? session.active : 'new'
+            sessionId = session.active ? session.active : null
             this.logger.debug(`${this}active session found: "${sessionId}"`)
+        }
+
+        if (logout) {
+            await this.setState({
+                app: {vault: {key: null, unlocked: false}},
+                user: {authenticated: false},
+            }, {encrypt: false, persist: true})
         }
 
         this.logger.debug(`${this}set session '${sessionId}'`)
@@ -437,12 +442,16 @@ class AppBackground extends App {
         if (this._watchers.length) this.__storeWatchers(false)
 
         // Overwrite the current state with the initial state.
+
         Object.assign(this.state, this._initialState(), keptState)
 
+        if (sessionId) session.active = sessionId
+        this.setState({app: {session}})
+
+        // Copy the unencrypted store of an active session to the state.
         if (sessionId && sessionId !== 'new') {
             this.__mergeDeep(this.state, this.store.get(`${sessionId}/state`))
             // Always pin these presets, no matter what the stored setting is.
-
             if (this.state.app.vault.key) {
                 this.state.app.vault.unlocked = true
             } else {
@@ -452,13 +461,10 @@ class AppBackground extends App {
             Object.assign(this.state.user, {authenticated: false, username: sessionId})
         }
 
-        this.state.app.session = session
-        // Set the active session.
-        if (sessionId && sessionId !== 'new') {
-            this.state.app.session.active = sessionId
-        }
-
-        this.setState(this.state)
+        // this.state.app.session = session
+        // // Set the info of the current sessions in the store again.
+        // this.state.app.session.active = sessionId
+        await this.setState(this.state)
         this.modules.ui.menubarState()
     }
 
@@ -470,7 +476,7 @@ class AppBackground extends App {
     * @param {Object} state - The state to update.
     * @param {Boolean} options - Whether to persist the changed state to localStorage.
     */
-    async setState(state, {action, encrypt, path, persist} = {}) {
+    async setState(state, {action, encrypt, path, persist = false} = {}) {
         if (!action) action = 'upsert'
         // Merge state in the context of the executing script.
         await this.__mergeStateQueue({action, encrypt, path, persist, state})

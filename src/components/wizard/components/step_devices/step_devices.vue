@@ -1,15 +1,18 @@
 <component class="component-step-devices">
-    <header class="cf">{{$t('audio devices')}}</header>
+    <header class="ca">{{$t('audio settings')}}</header>
 
-    <DevicePicker/>
-
+    <div class="step-description">
+        <span class="cf">{{$t('make sure that your headset is properly connected and verify the audio settings.')}}</span>
+        <DevicePicker/>
+    </div>
+    
     <slot name="progress"></slot>
 
     <div class="buttons is-centered">
         <button class="button cf test-step-telemetry-button-yes is-left" @click="stepBack()">
             {{$t('back')}}
         </button>
-        <button class="button is-primary cf test-step-telemetry-button-yes" @click="finishWizard()" :disabled="!selected.ready">
+        <button class="button is-primary cf test-step-telemetry-button-yes" @click="finishWizard()" :disabled="!stepValid">
             {{$t('finish')}}
         </button>
     </div>

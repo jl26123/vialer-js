@@ -58,12 +58,12 @@ class ModuleSettings extends Module {
             telemetry: {
                 analyticsId: process.env.ANALYTICS_ID,
                 clientId: null,
-                enabled: null, // Three values; null(not decided), false(disable), true(enable)
+                enabled: false,
                 sentryDsn: process.env.SENTRY_DSN,
             },
             webrtc: {
                 account: {
-                    options: [], // Platform integration provides these choices.
+                    options: [], // Custom platform integration provides options.
                     selected: {id: null, password: null, uri: null, username: null},
                     status: null,
                 },
@@ -101,20 +101,19 @@ class ModuleSettings extends Module {
                     },
                 },
                 stun: process.env.STUN,
-                toggle: true,
+                toggle: false,
             },
             wizard: {
                 completed: false,
-                // Start from th first wizard step.
                 steps: {
                     options: [
-                        {name: 'WizardStepWelcome', ready: true},
-                        {name: 'WizardStepTelemetry', ready: true}, // hide the next button.
-                        {name: 'WizardStepVoipaccount', ready: false},
-                        {name: 'WizardStepMicPermission', ready: false},
-                        {name: 'WizardStepDevices', ready: false},
+                        {name: 'WizardStepWelcome'},
+                        {name: 'WizardStepTelemetry'},
+                        {name: 'WizardStepAccount'},
+                        {name: 'WizardStepMicPermission'},
+                        {name: 'WizardStepDevices'},
                     ],
-                    selected: {name: 'WizardStepWelcome', ready: true},
+                    selected: {name: 'WizardStepWelcome'},
                 },
             },
         }
@@ -192,12 +191,16 @@ class ModuleSettings extends Module {
             /**
             * Deal with (de)selection of an account by connecting or disconnecting
             * from the Calls endpoint when the involved data changes.
+            * The `toggle` flag is an intention to switch webrtc to
+            * `enabled` status.This is because the enabled flag represents
+            * the current mode of operation in the UI. We don't want to
+            * influence the UI while dealing with something like a
+            * webrtc-enabled switch.
             * @param {String} newUsername - New selected account username.
             * @param {String} oldUsername - Previous selected account username.
             */
             'store.settings.webrtc.account.selected.username': async(newUsername, oldUsername) => {
                 const toggle = this.app.state.settings.webrtc.toggle
-
                 if (toggle && !this.app.state.settings.webrtc.enabled) {
                     await this.app.setState({settings: {webrtc: {enabled: true}}}, {persist: true})
                 }
@@ -221,19 +224,15 @@ class ModuleSettings extends Module {
                 this.app.devices.verifySinks()
             },
             /**
-            * Update the extension tab script status.
-            * @param {Boolean} enabled - Whether WebRTC is being enabled.
+            * There is a distinction between `webrtc.enabled` and `webrtc.toggle`.
+            * The `webrtc.toggle` is used to trigger enabling and disabling of
+            * WebRTC, while the `webrtc.enabled` flag is used to keep track of
+            * the application status, depending on the value of `webrtc.enabled`.
+            * @param {Boolean} toggle - Should WebRTC be enabled or not.
             */
-            'store.settings.webrtc.toggle': (enabled) => {
-                this.app.emit('bg:tabs:update_contextmenus', {}, true)
-
-                if (!enabled) {
-                    // Don't make it a habit to trigger a second watcher by
-                    // modifying data here, but in this case it's justified
-                    // because we actually mean clearing up the selected account
-                    // when disabling WebRTC.
-                    this.app.emit('bg:availability:account_reset', {}, true)
-                }
+            'store.settings.webrtc.toggle': (toggle) => {
+                // this.app.setState({settings: {webrtc: {enabled: toggle, toggle}}}, {persist: true})
+                if (!toggle) this.app.emit('bg:availability:account_reset', {}, true)
             },
         }
     }

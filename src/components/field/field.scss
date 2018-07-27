@@ -10,15 +10,27 @@
 }
 
 .field {
+    align-items: flex-start;
+    justify-content: left;
 
     &:last-child {
         margin-bottom: 0;
     }
 
     .label {
+        width: 100%;
+
         &:not(:last-child) {
             margin-bottom: 0;
         }
+    }
+
+    .control {
+        display: flex;
+    }
+
+    .help {
+        width: 100%;
     }
 
     .validation-message {

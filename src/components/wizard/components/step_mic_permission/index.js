@@ -6,12 +6,12 @@ module.exports = (app, shared) => {
         beforeDestroy: function() {
             clearInterval(this.intervalId)
         },
-        computed: app.helpers.sharedComputed(),
-        methods: Object.assign({
-            validateStep: function() {
-                this.selected.ready = this.permission
+        computed: Object.assign({
+            stepValid: function() {
+                return this.permission
             },
-        }, shared().methods),
+        }, app.helpers.sharedComputed()),
+        methods: shared().methods,
         mounted: function() {
             // Poll for the permission in case there is none, until
             // the user modified the browser permission in the navigation bar.
@@ -25,9 +25,6 @@ module.exports = (app, shared) => {
                     if (this.permission) clearInterval(this.intervalId)
                 }
             }, 500)
-
-
-            this.validateStep()
         },
         render: templates.wizard_step_mic_permission.r,
         staticRenderFns: templates.wizard_step_mic_permission.s,
@@ -36,11 +33,6 @@ module.exports = (app, shared) => {
             options: 'settings.wizard.steps.options',
             permission: 'settings.webrtc.media.permission',
             selected: 'settings.wizard.steps.selected',
-        },
-        watch: {
-            permission: function(granted) {
-                this.validateStep()
-            },
         },
     }
 

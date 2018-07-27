@@ -81,7 +81,7 @@ test('[browser] <alice> I am logging in.', async(t) => {
         await alice.screenshot({path: path.join(rootPath, '4. wizard-step-telemetry.png')})
 
         await alice.click('.test-step-telemetry-button-yes')
-        await alice.waitFor('.component-step-voipaccount')
+        await alice.waitFor('.component-step-account')
         // Wait for the select to be filled by the API call.
         await alice.waitFor('select option:not([disabled="disabled"])')
         await alice.screenshot({path: path.join(rootPath, '5. wizard-step-voipaccount.png')})

@@ -20,10 +20,10 @@ module.exports = (app) => {
         }
     }
 
+    app.components.WizardStepAccount = Vue.component('WizardStepAccount', require('./components/step_account')(app, shared))
     app.components.WizardStepDevices = Vue.component('WizardStepDevices', require('./components/step_devices')(app, shared))
     app.components.WizardStepMicPermission = Vue.component('WizardStepMicPermission', require('./components/step_mic_permission')(app, shared))
     app.components.WizardStepTelemetry = Vue.component('WizardStepTelemetry', require('./components/step_telemetry')(app, shared))
-    app.components.WizardStepVoipaccount = Vue.component('WizardStepVoipaccount', require('./components/step_voipaccount')(app, shared))
     app.components.WizardStepWelcome = Vue.component('WizardStepWelcome', require('./components/step_welcome')(app, shared))
     /**
     * @memberof fg.components
@@ -57,7 +57,7 @@ module.exports = (app) => {
                     const accountsLoading = this.settings.webrtc.account.status === 'loading'
                     const step = this.steps.options.find((i) => i.name === 'voipaccount')
 
-                    if (this.validVoipSettings && selectedVoipaccountId && !accountsLoading) {
+                    if (this.validAccountSettings && selectedVoipaccountId && !accountsLoading) {
                         step.ready = true
                     } else {
                         step.ready = false

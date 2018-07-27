@@ -77,7 +77,7 @@
             :model.sync="settings.webrtc.toggle"
             :help="env.isFirefox ? $t('firefox doesn\'t support this feature yet.') : $t('use WebRTC to receive incoming calls with and place outgoing calls.')"/>
 
-        <VoipaccountPicker :label="$t('softphone VoIP account')" :v="$v" v-if="availability.voip.selection"/>
+        <AccountPicker :label="$t('softphone VoIP account')" :v="$v" v-if="availability.voip.selection"/>
     </div>
 
     <!-- Audio settings -->

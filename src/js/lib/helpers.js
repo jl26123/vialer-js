@@ -167,7 +167,7 @@ function helpers(app) {
     * Validate whether a selected account has the right settings.
     * @returns {Boolean} - Valid or invalid.
     */
-    _helpers.validVoipSettings = function() {
+    _helpers.validAccountSettings = function() {
         const selected = this.settings.webrtc.account.selected
         if (selected && selected.settings) {
             if (!selected.settings.avpf || !selected.settings.encryption) return false
@@ -305,7 +305,7 @@ function helpers(app) {
                 }
                 return transferStatus
             },
-            validVoipSettings: _helpers.validVoipSettings,
+            validAccountSettings: _helpers.validAccountSettings,
         }
     }
 

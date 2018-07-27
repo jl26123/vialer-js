@@ -42,33 +42,32 @@
 
             &.video-cam-enabled {
                 position: relative;
-
-                .video-cam {
-                    & + .check {
-                        @include icon-size($spacer * 3.5);
-                        align-items: center;
-                        background: $green-color;
-                        border-radius: 50%;
-                        bottom: -$spacer;
-                        display: inline-flex;
-                        flex-direction: column;
-                        justify-content: center;
-                        position: absolute;
-                        right: -$spacer * 1.5;
-
-                        svg {
-                            @include icon-size($spacer * 1.5);
-                            fill: $white-color;
-                        }
-                    }
-                }
             }
         }
 
         .success-message {
-            color: $brand-color;
+            color: $grey-color;
             font-size: 0.9rem;
             font-weight: 500;
+
+            .check {
+                @include icon-size($spacer * 3);
+                align-items: center;
+                background: $green-color;
+                border-radius: 50%;
+                // bottom: -$spacer;
+                display: inline-flex;
+                flex-direction: column;
+                justify-content: center;
+                margin-right: $spacer;
+                // position: absolute;
+                // right: -$spacer * 1.5;
+
+                svg {
+                    @include icon-size($spacer * 1.5);
+                    fill: $white-color;
+                }
+            }
         }
     }
 
