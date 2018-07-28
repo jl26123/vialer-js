@@ -42,6 +42,7 @@ module.exports = (app) => {
                 }
             },
         },
+
         render: templates.device_picker.r,
         staticRenderFns: templates.device_picker.s,
         store: {

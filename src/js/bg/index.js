@@ -40,10 +40,10 @@ class AppBackground extends App {
         this.store = new Store(this)
         this.crypto = new Crypto(this)
         this.timer = new Timer(this)
-
-        this.__mergeQueue = []
-        this.__mergeIndex = 0
-
+        // Encrypted asynchronous writes are queued here.
+        this.__writeQueue = []
+        // Keep a reference of Vue watchers, so they can be toggled
+        // when switching between sessions.
         this._watchers = []
 
         // Send the background script's state to the requesting event.
@@ -51,7 +51,7 @@ class AppBackground extends App {
         this.on('bg:refresh_api_data', this._platformData.bind(this))
         // Calls to setState from the foreground.
         this.on('bg:set_state', (...args) => {
-            this.__mergeStateQueue(...args)
+            this.__mergeState(...args)
         })
 
         this.__init()
@@ -126,7 +126,6 @@ class AppBackground extends App {
     * an authenticated user.
     * @param {Boolean} callService - Whether to initialize the calling service.
     * @param {Boolean} contacts - Whether to subsribe to Contact Presence.
-
     */
     __initServices(callService = false) {
         this.logger.info(`${this}init connectivity services (callservice: ${callService ? 'yes' : 'no'})`)
@@ -192,7 +191,7 @@ class AppBackground extends App {
     async __initStore() {
         this.logger.info(`${this}init store`)
         super.__initStore()
-        this.setSession('active')
+        this.changeSession('active')
         // Setup HTTP client without authentication when there is a store.
         this.api.setupClient()
         // The vault always starts in a locked position.
@@ -210,7 +209,7 @@ class AppBackground extends App {
             await this.__initViewModel()
 
             this.__storeWatchers(true)
-            this.__initServices(true)
+            if (this.state.app.online) this.__initServices(true)
         } else {
             // No session yet.
             await this.__initViewModel()
@@ -226,13 +225,13 @@ class AppBackground extends App {
 
 
     /**
-    * App state merge operation with additional optional state storage.
-    * The busy flag and queue make sure that merge operations are done
-    * sequently. Multiple requests can come in from events; each should
-    * be processed one at a time.
+    * This operation applies the state update and processes unencrypted
+    * writes immediately; these can be done synchronously. Encrypted store
+    * writes are deferred to a write queue, which are handled from
+    * the `__queueNextTick` event-loop.
     * @param {Object} options - See the parameter description of super.
     */
-    async __mergeState({action = 'upsert', encrypt = true, path = null, persist = false, reject, resolve, state, item}) {
+    async __mergeState({action = 'upsert', encrypt = true, path = null, persist = false, state}) {
         const storeEndpoint = this.state.app.session.active
         // This could happen when an action is still queued, while the user
         // is logging out at the same moment. The action is then ignored.
@@ -240,24 +239,12 @@ class AppBackground extends App {
         // Flag that the operation is currently in use.
         super.__mergeState({action, encrypt, path, persist, state})
 
-        if (!persist) {
-            item.status = 2
-            resolve()
-            return
-        }
+        if (!persist) return
 
-        // Background is leading and is the only one that
-        // writes to storage using encryption.
-        let storeKey = encrypt ? `${storeEndpoint}/state/vault` : `${storeEndpoint}/state`
-        let storeState = this.store.get(storeKey)
+        let storeState
+        if (!encrypt) storeState = this.store.cache.unencrypted
+        else storeState = this.store.cache.encrypted
 
-        if (storeState) {
-            if (encrypt) {
-                storeState = JSON.parse(await this.crypto.decrypt(this.crypto.sessionKey, storeState))
-            }
-        } else storeState = {}
-
-        // Store specific properties in a nested key path.
         if (path) {
             path = path.split('.')
             const _ref = path.reduce((o, i)=>o[i], storeState)
@@ -266,43 +253,34 @@ class AppBackground extends App {
             this.__mergeDeep(storeState, state)
         }
 
-        // Encrypt the updated store state.
         if (encrypt) {
-            storeState = await this.crypto.encrypt(this.crypto.sessionKey, JSON.stringify(storeState))
+            // Defer this action to a queue, because encryption
+            // is async and takes a while.
+            const frozenState = this.utils.copyObject(state)
+            this.__writeQueue.push({
+                action: (item) => this.__writeEncryptedState({action, encrypt, item, path, persist, state: frozenState}),
+                status: 0,
+            })
+        } else {
+            // We can safely write to localstorage, because these
+            // writes are performed synchronously.
+            this.store.set(`${storeEndpoint}/state`, storeState)
+            return
         }
-
-        this.store.set(storeKey, storeState)
-
-        // The item may be cleaned up.
-        item.status = 2
-        resolve()
     }
 
 
     /**
-    * set state like in the foreground, but since storage/encryption
-    * is async, we resolve this call at the moment the particular action
-    * is resolved. Each item in the merge queue is processed in order.
-    * @returns {Promise} - Resolves when the state action has been processed.
+    * A simple task scheduler that checks whether the
+    * next write task can be processed.
     */
-    __mergeStateQueue({action, encrypt, path, persist, state}) {
-        return new Promise((resolve, reject) => {
-            this.__mergeQueue.push({
-                action: (item) => this.__mergeState({action, encrypt, item, path, persist, reject, resolve, state}),
-                status: 0,
-            })
-        })
-    }
-
-
     __queueNextTick() {
-        if (this.__mergeQueue.length) {
-            const item = this.__mergeQueue[0]
+        if (this.__writeQueue.length) {
+            const item = this.__writeQueue[0]
             if (item.status === 0) {
-                item.status = 1
                 item.action(item)
-            } else if (this.__mergeQueue[0].status === 2) {
-                this.__mergeQueue.shift()
+            } else if (this.__writeQueue[0].status === 2) {
+                this.__writeQueue.shift()
             }
         }
         window.requestAnimationFrame(this.__queueNextTick.bind(this))
@@ -341,7 +319,29 @@ class AppBackground extends App {
 
 
     /**
-    * Refresh data from the API endpoints for each module.
+    * This function is kept in an array and is processed like
+    * a queue. The queue determines whether the next item can
+    * be processed by checking the item status.
+    * @param {Object} options - The options to pass.
+    */
+    async __writeEncryptedState({action, item, path, persist, reject, resolve, state}) {
+        item.status = 1
+        const storeEndpoint = this.state.app.session.active
+        const storeKey = `${storeEndpoint}/state/vault`
+        if (!storeEndpoint) return
+
+        let storeState = this.store.cache.encrypted
+        storeState = await this.crypto.encrypt(this.crypto.sessionKey, JSON.stringify(storeState))
+        this.store.set(storeKey, storeState)
+        item.status = 2
+    }
+
+
+    /**
+    * Each background module can use a `_platformData` implementation
+    * to update their store properties at certain points in the application.
+    * This is called at the start after login and when using the refresh
+    * option.
     */
     async _platformData() {
         this.logger.info(`${this}<platform> refreshing all data`)
@@ -351,11 +351,7 @@ class AppBackground extends App {
             await Promise.all(dataRequests)
         } catch (err) {
             // Network changed in the meanwhile or a timeout error occured.
-            if (err.status === 'Network Error') {
-                if (this.state.app.online) {
-                    this._platformData()
-                }
-            }
+            this.logger.warn(`${this} network error occured: ${err}`)
         }
 
         if (this.state.settings.wizard.completed) this.modules.contacts.subscribe()
@@ -373,10 +369,12 @@ class AppBackground extends App {
     * @param {String} sessionId - The username/session to restore the state for.
     */
     async _restoreState(sessionId) {
-        this.logger.debug(`${this}restore state for session ${sessionId}`)
+        this.logger.debug(`${this}restore state on session "${sessionId}"`)
+
         let cipherData = this.store.get(`${sessionId}/state/vault`)
         let unencryptedState = this.store.get(`${sessionId}/state`)
         if (!unencryptedState) unencryptedState = {}
+        this.store.cache.unencrypted = unencryptedState
 
         let decryptedState = {}
         // Determine if there is an encrypted state vault.
@@ -384,9 +382,9 @@ class AppBackground extends App {
             this.logger.debug(`${this}restoring encrypted vault session ${sessionId}`)
             decryptedState = JSON.parse(await this.crypto.decrypt(this.crypto.sessionKey, cipherData))
         } else decryptedState = {}
+        this.store.cache.encrypted = decryptedState
 
         let state = {}
-
         this.__mergeDeep(state, decryptedState, unencryptedState)
 
         for (let module of Object.keys(this.modules)) {
@@ -403,18 +401,6 @@ class AppBackground extends App {
 
 
     /**
-    * Remove a session with a clean state.
-    * @param {String} sessionId - The identifier of the session.
-    */
-    removeSession(sessionId) {
-        this.logger.info(`${this}removing session '${sessionId}'`)
-        this.store.remove(`${sessionId}/state`)
-        this.store.remove(`${sessionId}/state/vault`)
-        this.setSession('new')
-    }
-
-
-    /**
     * Reboot a session with a clean state. It can be used
     * to load a specific previously stored session, or to
     * continue the session that should be active or to
@@ -422,7 +408,11 @@ class AppBackground extends App {
     * @param {String} sessionId - The identifier of the session.
     * @param {Object} keptState - State that needs to survive.
     */
-    async setSession(sessionId, keptState = {}, {logout = false} = {}) {
+    async changeSession(sessionId, keptState = {}, {logout = false} = {}) {
+        // The encrypted store cache must be emptied when switching sessions,
+        // otherwise unwanted state will leak into other sessions.
+        this.store.cache.encrypted = {}
+        // Find sessions from LocalStorage.
         let session = this.store.findSessions()
 
         if (sessionId === 'active') {
@@ -442,10 +432,9 @@ class AppBackground extends App {
         if (this._watchers.length) this.__storeWatchers(false)
 
         // Overwrite the current state with the initial state.
-
         Object.assign(this.state, this._initialState(), keptState)
 
-        if (sessionId) session.active = sessionId
+        session.active = sessionId
         this.setState({app: {session}})
 
         // Copy the unencrypted store of an active session to the state.
@@ -461,11 +450,21 @@ class AppBackground extends App {
             Object.assign(this.state.user, {authenticated: false, username: sessionId})
         }
 
-        // this.state.app.session = session
-        // // Set the info of the current sessions in the store again.
-        // this.state.app.session.active = sessionId
+        // Set the info of the current sessions in the store again.
         await this.setState(this.state)
         this.modules.ui.menubarState()
+    }
+
+
+    /**
+    * Remove a session with a clean state.
+    * @param {String} sessionId - The identifier of the session.
+    */
+    removeSession(sessionId) {
+        this.logger.info(`${this}removing session '${sessionId}'`)
+        this.store.remove(`${sessionId}/state`)
+        this.store.remove(`${sessionId}/state/vault`)
+        this.changeSession(null)
     }
 
 
@@ -479,7 +478,7 @@ class AppBackground extends App {
     async setState(state, {action, encrypt, path, persist = false} = {}) {
         if (!action) action = 'upsert'
         // Merge state in the context of the executing script.
-        await this.__mergeStateQueue({action, encrypt, path, persist, state})
+        this.__mergeState({action, encrypt, path, persist, state})
         // Sync the state to the other script context(bg/fg).
         // Make sure that we don't pass a state reference over the
         // EventEmitter in case of a webview; this would create

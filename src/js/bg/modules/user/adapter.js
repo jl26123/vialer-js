@@ -36,17 +36,14 @@ class UserAdapter {
     */
     async logout() {
         this.app.logger.info(`${this}logging out and cleaning up state`)
-
         this.app.__storeWatchers(false)
-
-        await this.app.setSession(null, {}, {logout: true})
+        await this.app.changeSession(null, {}, {logout: true})
 
         // Remove credentials from basic auth.
         this.app.api.setupClient()
         // Disconnect without reconnect attempt.
         this.app.modules.calls.disconnect(false)
         this.app.emit('bg:user:logged_out', {}, true)
-
 
         // Fallback to the browser language or to english.
         const languages = this.app.state.settings.language.options.map(i => i.id)
@@ -67,7 +64,7 @@ class UserAdapter {
 
 
     async unlock({username, password}) {
-        this.app.setSession(username)
+        await this.app.changeSession(username)
         this.app.setState({user: {status: 'loading'}})
 
         try {

@@ -22,7 +22,11 @@ module.exports = (app, shared) => {
                     // An exception means something else than a lack of permission.
                     clearInterval(this.intervalId)
                 } finally {
-                    if (this.permission) clearInterval(this.intervalId)
+                    if (this.permission) {
+                        clearInterval(this.intervalId)
+                        // Update the device list as soon we got permission.
+                        app.emit('bg:devices:verify-sinks')
+                    }
                 }
             }, 500)
         },

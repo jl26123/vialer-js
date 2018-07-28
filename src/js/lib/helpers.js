@@ -131,8 +131,8 @@ function helpers(app) {
             callingDisabled: {
                 device: $t('audio device settings (invalid audio device)').capitalize(),
                 disconnected: $t('service credentials (disconnected)').capitalize(),
-                mediaPermission: $t('browser microphone permission').capitalize(),
-                offline: $t('internet connection (offline)').capitalize(),
+                mediaPermission: $t('microphone access denied').capitalize(),
+                offline: $t('internet connection is offline').capitalize(),
                 unregistered: $t('service credentials (registration failed)').capitalize(),
             },
         }

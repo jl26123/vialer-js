@@ -9,6 +9,7 @@ module.exports = (app) => {
                 let classes = {}
                 if (block === 'component') {
                     if (!this.user.authenticated) classes.ok = true
+                    else if (this.status === 'loading') classes.ok = true
                     else {
                         if (this.settings.webrtc.enabled) {
                             if (!this.settings.webrtc.media.permission) classes.error = true
@@ -89,6 +90,7 @@ module.exports = (app) => {
             layer: 'ui.layer',
             selected: 'settings.webrtc.account.selected',
             settings: 'settings',
+            status: 'calls.status',
             ua: 'calls.ua',
             user: 'user',
             vendor: 'app.vendor',

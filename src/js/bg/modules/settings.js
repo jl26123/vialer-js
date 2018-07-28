@@ -91,7 +91,7 @@ class ModuleSettings extends Module {
                 },
                 enabled: false,
                 media: {
-                    permission: false,
+                    permission: true,
                     type: {
                         options: [
                             {id: 'AUDIO_NOPROCESSING', name: this.app.$t('audio without processing')},
@@ -214,14 +214,6 @@ class ModuleSettings extends Module {
                     this.app.modules.calls.disconnect(false)
                     this.app.emit('bg:availability:account_reset', {}, true)
                 }
-            },
-            /**
-            * Read the devices list as soon there is media permission
-            * and the user is authenticated. The devices list is stored
-            * in the vault, so the vault must be open at this point.
-            */
-            'store.settings.webrtc.media.permission': () => {
-                this.app.devices.verifySinks()
             },
             /**
             * There is a distinction between `webrtc.enabled` and `webrtc.toggle`.

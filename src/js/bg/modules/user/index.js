@@ -38,11 +38,11 @@ class ModuleUser extends Module {
         })
 
         this.app.on('bg:user:set_session', ({session}) => {
-            try {app.setSession(session)} catch (err) {console.trace(err)}
+            app.changeSession(session)
         })
 
         this.app.on('bg:user:remove_session', ({session}) => {
-            try {app.removeSession(session)} catch (err) {console.trace(err)}
+            app.removeSession(session)
         })
     }
 

@@ -24,6 +24,7 @@ class ModuleCalls extends Module {
         this.calls = {}
         // This flag indicates whether a reconnection attempt will be
         // made when the websocket connection is gone.
+
         this.reconnect = true
         // The default connection timeout to start with.
         this.retryDefault = {interval: 250, limit: 10000, timeout: 250}
@@ -471,6 +472,7 @@ class ModuleCalls extends Module {
     _initialState() {
         return {
             calls: {},
+            status: 'loading',
             ua: {
                 status: 'inactive',
             },
@@ -540,6 +542,13 @@ class ModuleCalls extends Module {
     }
 
 
+    _ready() {
+        if (!this.app.state.app.online) {
+            this.app.setState({calls: {status: null}})
+        }
+    }
+
+
     /**
     * Restore stored dumped state from localStorage.
     * @param {Object} moduleStore - Root property for this module.
@@ -547,6 +556,7 @@ class ModuleCalls extends Module {
     _restoreState(moduleStore) {
         Object.assign(moduleStore, {
             calls: {},
+            status: 'loading',
             ua: {
                 status: 'disconnected',
             },
@@ -596,12 +606,15 @@ class ModuleCalls extends Module {
                     this.app.setState({calls: {ua: {status: 'disconnected'}}})
                     // Offline modus is not detected by Sip.js, so we manually disconnect.
                     this.app.logger.debug(`${this}offline; disconnecting`)
-                    this.disconnect()
+                    this.disconnect(false)
                 } else {
                     // We are online again, try to reconnect and refresh API data.
-                    this.app._platformData()
                     this.app.logger.debug(`${this}online; connecting`)
                     this.connect({register: this.app.state.settings.webrtc.enabled})
+                    // Set a small delay, so axios won't encounter network errors.
+                    setTimeout(() => {
+                        this.app._platformData()
+                    }, 1500)
                 }
             },
             /**
@@ -622,6 +635,10 @@ class ModuleCalls extends Module {
             * @param {String} uaStatus - The new UA status.
             */
             'store.calls.ua.status': (uaStatus) => {
+                if (this.app.state.settings.webrtc.enabled) {
+                    if (uaStatus === 'registered') this.app.setState({calls: {status: null}})
+                } else if (uaStatus === 'connected') this.app.setState({calls: {status: null}})
+
                 this.app.modules.ui.menubarState()
             },
         }
@@ -791,7 +808,12 @@ class ModuleCalls extends Module {
     disconnect(reconnect = true) {
         this.reconnect = reconnect
         // Directly try to reconnect.
-        if (reconnect) this.retry.timeout = 0
+        if (reconnect) {
+            this.app.setState({calls: {status: 'loading'}})
+            this.retry.timeout = 0
+        } else {
+            this.app.setState({calls: {status: null}})
+        }
         if (this.ua && this.ua.isConnected()) {
             this.ua.stop()
         }
