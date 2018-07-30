@@ -326,6 +326,11 @@ class ModuleCalls extends Module {
         })
 
 
+        this.ua.on('registrationFailed', () => {
+            this.app.setState({calls: {status: null}})
+        })
+
+
         this.ua.on('unregistered', () => {
             this.app.setState({calls: {ua: {status: this.ua.isConnected() ? 'connected' : 'disconnected'}}})
             this.app.logger.debug(`${this}unregistered from ${this._uaOptions.wsServers}`)
@@ -474,6 +479,9 @@ class ModuleCalls extends Module {
             calls: {},
             status: 'loading',
             ua: {
+                // Determined at build time and used to switch endpoint
+                // input on for the user.
+                endpoint: Boolean(process.env.SIP_ENDPOINT),
                 status: 'inactive',
             },
         }

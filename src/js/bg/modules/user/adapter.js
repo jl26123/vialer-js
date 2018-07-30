@@ -16,10 +16,10 @@ class UserAdapter {
     * @param {String} options.username - The username the user is identified with.
     */
     async login({password, userFields, username}) {
-        await this.app.__initSession({password, username})
+        await this.app.__initSession({password})
         this.app.__storeWatchers(true)
 
-        await this.app.setState({
+        this.app.setState({
             // The `installed` and `updated` flag are toggled off after login.
             app: {installed: false, updated: false},
             ui: {layer: 'calls'},
@@ -63,12 +63,16 @@ class UserAdapter {
     }
 
 
+    /**
+    * This method is called when the correct session is already
+    * selected. No need to change sessions again.
+    */
     async unlock({username, password}) {
-        await this.app.changeSession(username)
-        this.app.setState({user: {status: 'loading'}})
+        this.app.setState({user: {status: 'unlock'}})
+        this.app.logger.info(`${this}unlocking session "${username}"`)
 
         try {
-            await this.app.__initSession({password, username})
+            await this.app.__initSession({password})
             this.app.__storeWatchers(true)
             this.app.api.setupClient(username, this.app.state.user.token)
             this.app.setState({ui: {layer: 'calls'}}, {encrypt: false, persist: true})

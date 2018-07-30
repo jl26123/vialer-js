@@ -3,7 +3,7 @@
     <header>
         <div class="greeting">{{greeting}}</div>
         <p class="welcome-message cf">
-            {{$t('welcome to')}} {{app.name}}.<br/>
+            {{$t('welcome to the')}} {{app.name}}!<br/>
             <span v-if="!app.session.active && app.session.available.length" class="cf">
                 {{$t('continue with an existing session')}}:
             </span>
@@ -34,10 +34,10 @@
     <!-- Login without any sessions, or when selecting a new session.-->
     <div v-else-if="!app.session.available.length || app.session.active === 'new' || user.status === 'login'">
 
-        <Field v-if="!availability.voip.endpoint" name="sip_endpoint" type="text"
+        <Field v-if="!calls.ua.endpoint" name="sip_endpoint" type="text"
             :label="$t('SIP websocket domain')"
             :model.sync="sipEndpoint"
-            placeholder="your-sip-provider.com"/>
+            placeholder="e.g. websocket.sip.provider.tld"/>
 
         <!-- Only show the username field with a 'new' session. -->
         <Field name="username" type="text"
@@ -89,7 +89,7 @@
     </div>
 
     <footer>
-        <div v-if="availability.voip.endpoint" class="forgot-pw">
+        <div v-if="calls.endpoint" class="forgot-pw">
             <a :href="`${url}user/password_reset/`" class="cf" target="_blank">{{$t('forgot your password?')}}</a>
         </div>
         <div class="help-message cf">{{$t('need help?')}}<br/><span class="cf">{{$t('click on the')}}</span><i @click="setOverlay('about')"><icon name="help"/></i>{{$t('icon')}}</div>

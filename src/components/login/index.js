@@ -61,6 +61,7 @@ module.exports = (app) => {
         store: {
             app: 'app',
             availability: 'availability',
+            calls: 'calls',
             sipEndpoint: 'settings.sipEndpoint',
             url: 'settings.platform.url',
             user: 'user',
@@ -105,6 +106,9 @@ module.exports = (app) => {
             return validations
         },
         watch: {
+            sipEndpoint: function(sipEndpoint) {
+                app.setState({settings: {sipEndpoint}})
+            },
             'twoFactorToken.value': function() {
                 this.twoFactorToken.valid = true
             },

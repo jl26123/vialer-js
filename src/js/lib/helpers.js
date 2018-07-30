@@ -51,7 +51,7 @@ function helpers(app) {
                 if (!(app.state.calls.ua.status === 'registered')) errors.push('unregistered')
                 if (!(app.state.settings.webrtc.devices.ready)) errors.push('device')
             } else {
-                // ConnectAB mode.
+                // Non-WebRTC modus.
                 if (!app.state.calls.ua.status === 'connected') errors.push('disconnected')
             }
         }
@@ -130,10 +130,10 @@ function helpers(app) {
             },
             callingDisabled: {
                 device: $t('audio device settings (invalid audio device)').capitalize(),
-                disconnected: $t('service credentials (disconnected)').capitalize(),
+                disconnected: $t('not connected to service').capitalize(), // Non-WebRTC status.
                 mediaPermission: $t('microphone access denied').capitalize(),
                 offline: $t('internet connection is offline').capitalize(),
-                unregistered: $t('service credentials (registration failed)').capitalize(),
+                unregistered: $t('not registered at service').capitalize(),
             },
         }
     }

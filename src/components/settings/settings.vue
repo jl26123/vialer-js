@@ -72,17 +72,20 @@
     <div class="tab" :class="{'is-active': tabs.active === 'phone'}">
 
         <Field name="webrtc_enabled" type="checkbox"
-            :disabled="env.isFirefox || !settings.webrtc.account.options.length"
+            :disabled="env.isFirefox"
             :label="$t('use as softphone')"
             :model.sync="settings.webrtc.toggle"
             :help="env.isFirefox ? $t('firefox doesn\'t support this feature yet.') : $t('use WebRTC to receive incoming calls with and place outgoing calls.')"/>
 
-        <AccountPicker :label="$t('softphone VoIP account')" :v="$v" v-if="availability.voip.selection"/>
+        <AccountPicker :label="$t('softphone VoIP account')" :v="$v" v-if="user.platform.account.selection"/>
     </div>
 
     <!-- Audio settings -->
     <div class="tab" :class="{'is-active': tabs.active === 'audio'}">
-        <DevicePicker/>
+        <DevicePicker v-if="settings.webrtc.media.permission"/>
+        <div v-else>
+            <MicPermission/>
+        </div>
     </div>
 
     <div class="tabs-actions field is-grouped">

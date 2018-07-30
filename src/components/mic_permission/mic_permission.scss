@@ -9,11 +9,30 @@
         margin-bottom: $spacer;
     }
 
-    .mic-popout-instructions {
+    .mic-details {
         align-items: center;
         display: flex;
         flex-direction: column;
         position: relative;
+
+        &.popup {
+            margin-bottom: $spacer * 5;
+        }
+
+        .icon {
+            @include icon-size($spacer * 3);
+            align-items: center;
+            border-radius: 50%;
+            display: inline-flex;
+            flex-direction: column;
+            justify-content: center;
+            margin-right: $spacer;
+
+            svg {
+                @include icon-size($spacer * 1.5);
+                fill: $white-color;
+            }
+        }
 
         .browser-bar {
             align-items: center;
@@ -50,23 +69,28 @@
             font-size: 0.9rem;
             font-weight: 500;
 
-            .check {
-                @include icon-size($spacer * 3);
-                align-items: center;
+            .icon {
                 background: $green-color;
-                border-radius: 50%;
-                // bottom: -$spacer;
-                display: inline-flex;
-                flex-direction: column;
-                justify-content: center;
-                margin-right: $spacer;
-                // position: absolute;
-                // right: -$spacer * 1.5;
+            }
+        }
 
-                svg {
-                    @include icon-size($spacer * 1.5);
-                    fill: $white-color;
-                }
+        .instruction {
+            color: $grey-color;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: $spacer * 2;
+            text-align: center;
+
+            .instruction-header {
+                margin-bottom: $spacer;
+            }
+
+            button {
+                margin-top: $spacer * 2;
+            }
+
+            .icon {
+                background: $brand-color;
             }
         }
     }

@@ -7,15 +7,17 @@ const test = require('tape')
 
 require('../../src/js/bg/vendor')
 require('../../src/js/i18n/nl')
-const {AppBackground, bgOptions} = require('../../src/js/bg')
+const {AppBackground, options} = require('../../src/js/bg')
 
 
 test('[bg] starting up sequence', function(t) {
     t.plan(3)
-    const bg = new AppBackground(bgOptions)
+    const bg = new AppBackground(options)
+    console.log(options.modules.builtin)
     // There is no schema in the database on a fresh start.
     t.equal(bg.store.get('schema'), null, 'storage: schema absent on startup')
     bg.on('factory-defaults', () => {
+        console.log("FACTORY")
         // The schema is set after a factory reset.
         t.equal(bg.store.get('schema'), bg.store.schema, `storage: schema version (${bg.store.schema}) present after factory reset`)
     })
@@ -24,6 +26,7 @@ test('[bg] starting up sequence', function(t) {
     // which adapts the mnubar status accordingly. This check makes sure that the
     // watcher mechanism picks up the change.
     bg.on('ready', () => {
+        console.log("READY")
         bg.state.user.authenticated = true
         bg.setState({calls: {ua: {status: 'registered'}}})
         Vue.nextTick(function() {

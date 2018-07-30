@@ -55,9 +55,6 @@ class ModuleUser extends Module {
         return Object.assign({
             authenticated: false,
             developer: false,
-            settings: {
-                voip: true,
-            },
             status: null,
             username: null,
         }, this.adapter._initialState())

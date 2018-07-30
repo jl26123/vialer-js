@@ -31,51 +31,13 @@ module.exports = (app) => {
     const Wizard = {
         computed: app.helpers.sharedComputed(),
         created: function() {
-            if (app.state.availability.voip.selection) {
-                const accountStep = this.steps.options.find((step) => step.name !== 'voipaccount')
-                if (accountStep) {
-                    app.setState({settings: {wizard: {steps: {options: this.steps.options.filter((step) => step.name !== 'voipaccount')}}}}, {persist: true})
-                }
-            }
-        },
-        data: function() {
-            let data = {
-                account: {
-                    selection: app.state.availability.voip.selection,
-                },
-            }
-            return data
-        },
-        methods: Object.assign({
-            validateStep: function(type) {
-                if (type === 'microphone') {
-                    if (this.settings.webrtc.media.permission) {
-                        this.steps.options.find((i) => i.name === 'microphone').ready = true
-                    }
-                } else if (type === 'voipaccount') {
-                    const selectedVoipaccountId = this.settings.webrtc.account.selected.id
-                    const accountsLoading = this.settings.webrtc.account.status === 'loading'
-                    const step = this.steps.options.find((i) => i.name === 'voipaccount')
-
-                    if (this.validAccountSettings && selectedVoipaccountId && !accountsLoading) {
-                        step.ready = true
-                    } else {
-                        step.ready = false
-                    }
-                }
-            },
-        }, app.helpers.sharedMethods()),
-        /**
-        * Adjusting the wizard steps is done when the component
-        * mounts, and when data changes. That is being tracked
-        * in appropriate watchers.
-        */
-        mounted: function() {
-            // The microphone step is ready when the permission
-            // is already there.
-            // this.validateStep('microphone')
-            if (this.account.selection) {
-                // this.validateStep('voipaccount')
+            if (!this.user.platform.account.selection) {
+                app.setState({
+                    settings: {
+                        webrtc: {enabled: true, toggle: true},
+                        wizard: {steps: {options: this.steps.options.filter((step) => step.name !== 'WizardStepAccount')}},
+                    },
+                }, {persist: true})
             }
         },
         render: templates.wizard.r,
@@ -84,6 +46,7 @@ module.exports = (app) => {
             app: 'app',
             settings: 'settings',
             steps: 'settings.wizard.steps',
+            user: 'user',
         },
     }
 

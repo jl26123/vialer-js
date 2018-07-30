@@ -63,7 +63,7 @@ module.exports = (app) => {
             }
             // Add the validation that is shared with step_voipaccount, but
             // only if the user is supposed to choose between voiapccount options.
-            if (this.availability.voip.selection) {
+            if (this.user.platform.account.selection) {
                 validations.settings.webrtc = {account: app.helpers.sharedValidations.bind(this)().settings.webrtc.account}
             }
 

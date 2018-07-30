@@ -216,6 +216,15 @@ class ModuleSettings extends Module {
                 }
             },
             /**
+            * The default value is true.
+            */
+            'store.settings.webrtc.media.permission': (enabled) => {
+                if (enabled) {
+                    console.log("CHANGED")
+                    this.app.devices.verifySinks()
+                }
+            },
+            /**
             * There is a distinction between `webrtc.enabled` and `webrtc.toggle`.
             * The `webrtc.toggle` is used to trigger enabling and disabling of
             * WebRTC, while the `webrtc.enabled` flag is used to keep track of

@@ -49,12 +49,6 @@ class ModuleAvailability extends Module {
         return Object.assign({
             available: false,
             dnd: false,
-            voip: {
-                // Determined at build time and used to switch endpoint
-                // input on for the user.
-                endpoint: Boolean(process.env.SIP_ENDPOINT),
-                selection: Array.isArray(adapterState.phoneaccounts),
-            },
         }, adapterState)
     }
 

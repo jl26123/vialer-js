@@ -65,6 +65,11 @@ class App extends Skeleton {
             try {
                 await navigator.mediaDevices.getUserMedia(this._getUserMediaFlags())
                 this.setState({settings: {webrtc: {media: {permission: true}}}})
+                const devices = this.state.settings.webrtc.devices
+                // Early device query.
+                if (!devices.input.length || !devices.output.length) {
+                    this.emit('bg:devices:verify-sinks')
+                }
             } catch (err) {
                 // There are no devices at all. Spawn a warning.
                 if (err.message === 'Requested device not found') {
@@ -218,9 +223,7 @@ class App extends Skeleton {
                 } else if (Array.isArray(source[key])) {
                     Object.assign(target, {[key]: source[key]})
                 } else {
-                    if (target[key] !== source[key]) {
-                        target[key] = source[key]
-                    }
+                    target[key] = source[key]
                 }
             }
         }
@@ -315,7 +318,6 @@ class App extends Skeleton {
         const inputSink = this.state.settings.webrtc.devices.sinks.headsetInput.id
 
         if (inputSink && inputSink !== 'default') {
-            this.logger.debug(`${this}usermedia stream forced to sink: ${inputSink}`)
             userMediaFlags.audio.deviceId = inputSink
         }
         return userMediaFlags

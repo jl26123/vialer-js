@@ -91,5 +91,27 @@
     .switch[type="checkbox"] + label {
         display: block;
     }
+}
+
+.field-password {
+    .control {
+        .input {
+
+            +.icon {
+                pointer-events: auto;
+
+                &.visible {
+                    color: $red-color;
+                }
+
+                svg:hover {
+                    cursor: pointer;
+                }
+            }
+        }
+
+
+
+    }
 
 }

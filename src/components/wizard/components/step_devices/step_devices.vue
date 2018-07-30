@@ -5,14 +5,14 @@
         <span class="cf">{{$t('make sure that your headset is properly connected and verify the audio settings.')}}</span>
         <DevicePicker/>
     </div>
-    
+
     <slot name="progress"></slot>
 
     <div class="buttons is-centered">
         <button class="button cf test-step-telemetry-button-yes is-left" @click="stepBack()">
             {{$t('back')}}
         </button>
-        <button class="button is-primary cf test-step-telemetry-button-yes" @click="finishWizard()" :disabled="!stepValid">
+        <button class="button is-primary cf test-step-telemetry-button-yes" @click="storeDevices()" :disabled="!stepValid">
             {{$t('finish')}}
         </button>
     </div>

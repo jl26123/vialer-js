@@ -6,6 +6,9 @@ module.exports = (app) => {
     * @memberof fg.components
     */
     const DevicePicker = {
+        beforeDestroy: function() {
+            clearInterval(this.intervalId)
+        },
         data: function() {
             return {
                 playing: {
@@ -14,9 +17,6 @@ module.exports = (app) => {
                     speakerOutput: false,
                 },
             }
-        },
-        destroyed: function() {
-            clearInterval(this.soundMeterInterval)
         },
         methods: {
             playSound: function(soundName, sinkTarget) {
@@ -42,7 +42,17 @@ module.exports = (app) => {
                 }
             },
         },
-
+        mounted: function() {
+            // Keep an eye on the media permission while being mounted.
+            this.intervalId = setInterval(async() => {
+                try {
+                    await app.__initMedia()
+                } catch (err) {
+                    // An exception means something else than a lack of permission.
+                    clearInterval(this.intervalId)
+                }
+            }, 50)
+        },
         render: templates.device_picker.r,
         staticRenderFns: templates.device_picker.s,
         store: {

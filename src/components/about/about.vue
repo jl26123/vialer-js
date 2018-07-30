@@ -31,7 +31,7 @@
             <icon class="support-icon" name="github"/>
             <div class="support-title">Github</div>
             <div class="support-description cf">{{$t('report an issue')}}:</div>
-            <div class="support-channel link" @click="openTab('https://github.com/voipgrid/vialer-js/issues')">Github issues</div>
+            <div class="support-channel link" @click="openTab('https://github.com/vialer/vialer-js/issues')">Github issues</div>
         </div>
     </div>
 </component>

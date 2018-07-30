@@ -92,7 +92,7 @@ class ModuleUI extends Module {
                     active: 'recent',
                 },
                 settings: {
-                    active: 'audio',
+                    active: 'general',
                 },
             },
             visible: false,
