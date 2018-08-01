@@ -97,17 +97,19 @@ class Devices {
     validateSinks({input, output}) {
         const browserSinks = {input, output}
         let storedDevices = this.app.utils.copyObject({input: this.cached.input, output: this.cached.output})
+
         this.sinks = this.app.state.settings.webrtc.devices.sinks
         let valid = true
 
-        for (const sinkName of Object.keys(this.sinks)) {
-            const sink = this.sinks[sinkName]
-            const sinkType = sinkName.endsWith('Input') ? 'input' : 'output'
+        for (const sinkCategory of Object.keys(this.sinks)) {
+            const sink = this.sinks[sinkCategory]
+
+            const sinkType = sinkCategory.endsWith('Input') ? 'input' : 'output'
             if (sink.id === 'default') continue
 
             let storedDevice = storedDevices[sinkType].find((i) => i.id === sink.id)
             if (!storedDevice) {
-                // The stored sink is not in the stored input/output options
+                // The stored sink is not in the stored input/output device options
                 // anymore. Add the missing option to the stored device list.
                 this.app.logger.debug(`${this}restoring sink '${sink.name}'`)
                 storedDevice = sink
@@ -148,19 +150,19 @@ class Devices {
             // No sinks stored before; fill the output and input device options.
             this.app.setState({settings: {webrtc: {devices: {input, output}}}}, {persist: true})
         } else {
-            const sinkChange = this.compareSinks({input, output})
-            if (sinkChange.added.length) this.app.logger.debug(`${this}sink(s) added:\n${sinkChange.added.map((i) => i.name).join('\n')}`)
-            if (sinkChange.removed.length) this.app.logger.debug(`${this}sink(s) removed:\n${sinkChange.removed.map((i) => i.name).join('\n')}`)
+            const sinkDiff = this.compareSinks({input, output})
+            if (sinkDiff.added.length) this.app.logger.debug(`${this}sink(s) added:\n${sinkDiff.added.map((i) => i.name).join('\n')}`)
+            if (sinkDiff.removed.length) this.app.logger.debug(`${this}sink(s) removed:\n${sinkDiff.removed.map((i) => i.name).join('\n')}`)
 
             // Always notify about a newly connected device.
-            if (sinkChange.added.length) {
+            if (sinkDiff.added.length) {
                 const message = this.app.$t('new audio device detected.')
                 this.app.notify({icon: 'info', message, type: 'info'})
             }
 
             // There are options available; verify if the selected sinks are valid.
             if (this.validateSinks({input, output})) {
-                if (sinkChange.removed.length) {
+                if (sinkDiff.removed.length) {
                     const message = this.app.$t('unused audio device was removed.')
                     this.app.notify({icon: 'warning', message, type: 'warning'})
                 }

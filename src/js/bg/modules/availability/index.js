@@ -47,7 +47,7 @@ class ModuleAvailability extends Module {
         }
 
         return Object.assign({
-            available: false,
+            available: true,
             dnd: false,
         }, adapterState)
     }

@@ -125,9 +125,8 @@ class Call {
     * permission to the microphone. This permission is already granted
     * from the fg script. Addding the video elements to the bg DOM
     * allows us to keep the Call stream active after the popup is closed.
-    * @returns {Promise} - Resolves with the local audio stream.
     */
-    async _initMedia() {
+    async _initSinks() {
         // Set the output device from settings.
         const devices = this.app.state.settings.webrtc.devices
         try {
@@ -142,8 +141,6 @@ class Call {
             this.app.notify({icon: 'warning', message, type: 'danger'})
             console.error(err)
         }
-
-        return navigator.mediaDevices.getUserMedia(this.app._getUserMediaFlags())
     }
 
 

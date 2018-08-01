@@ -31,6 +31,7 @@
         "Vue": true,
         "translations": true,
         "I18nStore": true,
+        "I18nTranslations": true,
         "i18n": true,
         "EventEmitter": true,
         "Raven": true,

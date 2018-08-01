@@ -33,8 +33,8 @@ module.exports = (app) => {
                         })
                     } else {
                         app.emit('bg:user:login', {
+                            endpoint: this.settings.webrtc.endpoint.uri,
                             password: this.password,
-                            sipEndpoint: this.sipEndpoint,
                             username: this.user.username,
                         })
                     }
@@ -62,7 +62,7 @@ module.exports = (app) => {
             app: 'app',
             availability: 'availability',
             calls: 'calls',
-            sipEndpoint: 'settings.sipEndpoint',
+            settings: 'settings',
             url: 'settings.platform.url',
             user: 'user',
             vendor: 'app.vendor',
@@ -106,8 +106,8 @@ module.exports = (app) => {
             return validations
         },
         watch: {
-            sipEndpoint: function(sipEndpoint) {
-                app.setState({settings: {sipEndpoint}})
+            'settings.webrtc.endpoint.uri': function(uri) {
+                app.setState({settings: {webrtc: {endpoint: {uri}}}})
             },
             'twoFactorToken.value': function() {
                 this.twoFactorToken.valid = true

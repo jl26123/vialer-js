@@ -34,10 +34,11 @@
     <!-- Login without any sessions, or when selecting a new session.-->
     <div v-else-if="!app.session.available.length || app.session.active === 'new' || user.status === 'login'">
 
-        <Field v-if="!calls.ua.endpoint" name="sip_endpoint" type="text"
+        <Field v-if="!settings.webrtc.endpoint.selection" name="sip_endpoint" type="text"
             :label="$t('SIP websocket domain')"
-            :model.sync="sipEndpoint"
-            placeholder="e.g. websocket.sip.provider.tld"/>
+            :model.sync="settings.webrtc.endpoint.uri"
+            :help="$t('SIP provider with support for SIP over websockets and WebRTC.')"
+            :placeholder="$t('e.g. websocket.my-sip-provider.tld')"/>
 
         <!-- Only show the username field with a 'new' session. -->
         <Field name="username" type="text"
@@ -75,7 +76,7 @@
         <div v-for="session in app.session.available" class="session">
             <i class="icon-session" @click="selectSession(session)"><icon name="user"/></i>
             <div class="description" @click="selectSession(session)">{{session}}</div>
-            <i class="icon-remove status-indicator tooltip tooltip-left" :data-tooltip="$t('remove session')" @click="removeSession(session)">
+            <i class="icon-remove status-indicator tooltip tooltip-left" :data-tooltip="$t('remove session').capitalize()" @click="removeSession(session)">
                 <icon name="close"/>
             </i>
         </div>

@@ -4,7 +4,7 @@
 // icon-links to several locations.
 .component-main-callbar {
     align-items: center;
-    background: $green-color;
+    background: $brand-accent-color;
     color: $white;
     display: flex;
     font-size: 0.8rem;
@@ -15,7 +15,7 @@
 
     // Another call that isn't started yet.
     &.inactive {
-        background: $brand-variation-color;
+        background: $brand-accent-color;
         color: #fff;
     }
 

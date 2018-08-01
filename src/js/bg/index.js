@@ -9,30 +9,34 @@ const Devices = require('./lib/devices')
 const env = require('../lib/env')({role: 'bg'})
 const Store = require('./lib/store')
 const Telemetry = require('./lib/telemetry')
-const Timer = require('./lib/timer')
 
+const Timer = require('./lib/timer')
 
 /**
 * The Vialer-js `AppBackground` is a separate running script.
 * Functionality that is considered to be part of the backend
-* is placed in this context because this process keeps running
-* after the AppForeground (the popup) is closed (at least, when running
-* the application as WebExtension). In that sense, this is a typical
-* client-server model. When running as a webview, the background is just
-* as volatile as the foreground, but the same concept can be used nevertheless.
+* is placed in this context, because this process keeps running
+* after the AppForeground (the popup) is closed; at least, when running
+* the application as WebExtension. In that sense, this is a typical
+* client-server model. When running as a flat webview, the background is
+* just as volatile as the foreground, but the same concept and
+* code structure is used. The only difference between the
+* environments is the involved EventEmitter logic.
+*
 * @memberof app
 */
 class AppBackground extends App {
     /**
     * @param {Object} opts - Options to initialize AppBackground with.
     * @param {Object} opts.env - The environment sniffer.
+    * @param {Object} opts.modules - Modules to start with.
     * @namespace AppBackground.modules
     */
     constructor(opts) {
         super(opts)
 
         // Allow context debugging during development.
-        // Avoid leaking this global in production mode!
+        // Avoid leaking this global in production mode.
         if (!(process.env.NODE_ENV === 'production')) global.bg = this
 
         this.store = new Store(this)
@@ -77,6 +81,7 @@ class AppBackground extends App {
 
 
     async __init() {
+
         if (this.env.isBrowser) {
             // Create audio/video elements in a browser-like environment.
             // The audio element is used to playback sounds with
@@ -174,7 +179,7 @@ class AppBackground extends App {
             await this.crypto.storeVaultKey()
         }
         // Get a fresh reference to the media permission on unlock.
-        this.__initMedia()
+        this.media.poll()
         this.emit('bg:user-unlocked', {}, true)
     }
 
@@ -206,9 +211,10 @@ class AppBackground extends App {
             this.api.setupClient(this.state.user.username, this.state.user.token)
             // (!) State is reactive after initializing the view-model.
             await this.__initViewModel()
-
             this.__storeWatchers(true)
-            if (this.state.app.online) this.__initServices(true)
+            if (this.state.app.online) {
+                this.__initServices(true)
+            }
         } else {
             // No session yet.
             await this.__initViewModel()
@@ -378,7 +384,6 @@ class AppBackground extends App {
     */
     async _restoreState() {
         const sessionId = this.state.app.session.active
-        this.logger.debug(`${this}restore state of session "${sessionId}"`)
 
         let unencryptedState = this.store.get(`${sessionId}/state`)
         if (!unencryptedState) {
@@ -391,8 +396,14 @@ class AppBackground extends App {
         let cipherData = this.store.get(`${sessionId}/state/vault`)
         let decryptedState = {}
         if (cipherData) {
-            this.logger.debug(`${this}restoring encrypted vault session ${sessionId}`)
-            decryptedState = JSON.parse(await this.crypto.decrypt(this.crypto.sessionKey, cipherData))
+            try {
+                decryptedState = JSON.parse(await this.crypto.decrypt(this.crypto.sessionKey, cipherData))
+            } catch (err) {
+                this.logger.debug(`${this}failed to restore encrypted state`)
+                throw new Error('failed to decrypt; wrong password?')
+            }
+
+            this.logger.debug(`${this}restored encrypted vault session ${sessionId}`)
         } else decryptedState = {}
         this.store.cache.encrypted = decryptedState
 
@@ -407,7 +418,7 @@ class AppBackground extends App {
                 this.modules[module]._restoreState(state[module])
             }
         }
-
+        this.logger.debug(`${this}restore state of session "${sessionId}"`)
         await this.setState(state)
     }
 
@@ -446,7 +457,7 @@ class AppBackground extends App {
         if (this._watchers.length) this.__storeWatchers(false)
 
         // Overwrite the current state with the initial state.
-        Object.assign(this.state, this._initialState(), keptState)
+        this.__mergeDeep(this.state, this.__mergeDeep(this._initialState(), keptState))
 
         session.active = sessionId
         this.setState({app: {session}})
@@ -465,9 +476,10 @@ class AppBackground extends App {
         }
 
         // Set the info of the current sessions in the store again.
-        await this.setState(this.state)
-        this.modules.ui.menubarState()
 
+        await this.setState(this.state)
+
+        this.modules.ui.menubarState()
         return sessionId
     }
 
@@ -529,6 +541,7 @@ let options = {
             },
             {module: require('./modules/calls'), name: 'calls'},
             {
+                i18n: process.env.BUILTIN_CONTACTS_I18N,
                 module: require('./modules/contacts'),
                 name: 'contacts',
                 providers: process.env.BUILTIN_CONTACTS_PROVIDERS,
@@ -537,6 +550,7 @@ let options = {
             {module: require('./modules/ui'), name: 'ui'},
             {
                 adapter: process.env.BUILTIN_USER_ADAPTER,
+                i18n: process.env.BUILTIN_USER_I18N,
                 module: require('./modules/user'),
                 name: 'user',
             },

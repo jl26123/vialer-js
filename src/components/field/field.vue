@@ -63,7 +63,9 @@
                 <option v-if="!options.length" value="" disabled selected class="cf">{{$t(empty)}}</option>
                 <option :selected="option[idfield] == model.id" :value="option[idfield]" v-for="option in options" v-else>
                     <template v-if="option[idfield] === null && placeholder">{{placeholder.capitalize()}}</template>
-                    <template v-else>{{$t(option.name).capitalize()}}</template>
+                    <template v-else-if="option.name">{{$t(option.name).capitalize()}}</template>
+                    <template v-else>{{$t(option.name)}}
+                    </template>
                 </option>
             </select>
         </div>

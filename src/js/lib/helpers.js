@@ -210,17 +210,6 @@ function helpers(app) {
 
                 return true
             },
-            openPlatformUrl: function(path = '') {
-                app.emit('bg:user:update-token', {
-                    callback: ({token}) => {
-                        path = `client/${this.user.client_id}/${path}`
-                        path = `user/autologin/?token=${token}&username=${this.user.username}&next=/${path}`
-                        let url = `${app.state.settings.platform.url}${path}`
-                        if (app.env.isExtension) browser.tabs.create({url: url})
-                        window.open(url, '_blank')
-                    },
-                })
-            },
             openPopoutView: function() {
                 // This is only available in extensions.
                 if (app.env.isExtension) {

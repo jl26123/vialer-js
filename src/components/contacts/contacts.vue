@@ -16,10 +16,15 @@
                 </div>
             </div>
             <div class="header-line contacts-options">
-                <input class="input" autofocus type="email"
-                    :placeholder="$t('find contact') + '...'"
-                    :disabled="search.disabled"
-                    v-model="search.input"/>
+                <div class="field field-text">
+                    <div class="control">
+                        <input class="input" autofocus type="input"
+                            :placeholder="$t('find contact') + '...'"
+                            :disabled="search.disabled"
+                            v-model="search.input"/>
+                    </div>
+                </div>
+
                 <div class="display-mode" :class="classes('display-mode', 'lean')" @click="setDisplayMode('lean')">
                     <icon name="contacts-lean"/>
                 </div>

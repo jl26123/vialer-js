@@ -40,14 +40,14 @@
 @keyframes hint-pulse-active {
     0% {
         background-color: rgba(255, 255, 255, 0.7);
-        color: $brand-variation-color;
+        color: $brand-accent-color;
     }
 
     50% {background-color: rgba(255, 255, 255, 1);}
 
     100% {
         background-color: rgba(255, 255, 255, 0.7);
-        color: $brand-variation-color;
+        color: $brand-accent-color;
     }
 }
 

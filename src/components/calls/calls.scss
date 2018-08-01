@@ -5,18 +5,14 @@
     // Push the soundmeter to the bottom.
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    // justify-content: space-between;
 
     &.call-ongoing {
-        background: darken($brand-color, 5%);
+        background: $grey-color-lightest;
 
         .calls-container {
             display: grid;
             grid-template-columns: auto ($spacer * 5);
-        }
-
-        .soundmeter {
-            border-top: 1px solid $brand-color;
         }
     }
 
@@ -55,7 +51,7 @@
 
     .soundmeter {
         align-items: center;
-        border-top: 1px solid $grey-color-lightest;
+        background: $white-tint-color-dark;
         display: flex;
         height: $spacer * 1.5;
         justify-content: center;

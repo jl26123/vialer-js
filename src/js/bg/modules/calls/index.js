@@ -252,10 +252,8 @@ class ModuleCalls extends Module {
 
     /**
     * Deal with events coming from a UA.
-    * @param {Function} resolve - Resolve Promise when a connection is made.
-    * @param {Function} reject - Reject Promise when a connection fails.
     */
-    __uaEvents(resolve, reject) {
+    __uaEvents() {
         /**
         * An incoming call. Call-waiting is not implemented.
         * A new incoming call on top of a call that is already
@@ -321,12 +319,21 @@ class ModuleCalls extends Module {
 
 
         this.ua.on('registered', () => {
-            this.app.setState({calls: {ua: {status: 'registered'}}})
+            if (this.__registerPromise) {
+                this.__registerPromise.resolve()
+                delete this.__registerPromise
+            }
+            this.app.setState({calls: {status: null, ua: {status: 'registered'}}})
             this.app.logger.info(`${this}registered at ${this._uaOptions.wsServers}`)
         })
 
 
         this.ua.on('registrationFailed', () => {
+            if (this.__registerPromise) {
+                this.__registerPromise.reject()
+                this.disconnect()
+                delete this.__registerPromise
+            }
             this.app.setState({calls: {status: null}})
         })
 
@@ -381,12 +388,14 @@ class ModuleCalls extends Module {
     * on whether the application will be using the softphone
     * to connect to the backend with or the vendor portal user.
     * @param {Object} account - The SIP credentials to connect with.
-    * @param {Object} account.username - Username to connect with.
-    * @param {Object} account.password - Password to connect with.
-    * @param {Object} [register] - Use SIP register.
+    * @param {Object} account.username - Username to login with.
+    * @param {Object} account.password - Password to login with.
+    * @param {Object} account.uri - The SIP uri to login with.
+    * @param {String} [endpoint] - The SIP endpoint.
+    * @param {Object} [register] - Register to the SIP service.
     * @returns {Object} UA options that are passed to Sip.js
     */
-    __uaOptions(account, register = true) {
+    __uaOptions(account, endpoint = null, register = true) {
         const settings = this.app.state.settings
 
         // For webrtc this is a voipaccount, otherwise an email address.
@@ -411,7 +420,7 @@ class ModuleCalls extends Module {
             },
             traceSip: false,
             userAgentString: this._userAgent(),
-            wsServers: `wss://${settings.sipEndpoint}`,
+            wsServers: `wss://${endpoint ? endpoint : settings.webrtc.endpoint.uri}`,
         }
 
         options.authorizationUser = account.username
@@ -479,9 +488,6 @@ class ModuleCalls extends Module {
             calls: {},
             status: 'loading',
             ua: {
-                // Determined at build time and used to switch endpoint
-                // input on for the user.
-                endpoint: Boolean(process.env.SIP_ENDPOINT),
                 status: 'inactive',
             },
         }
@@ -743,31 +749,36 @@ class ModuleCalls extends Module {
 
     /**
     * Initialize the SIPJS UserAgent and register its events.
-    * @returns {Promise} - Resolves when connected.
+    * Connection details can be passed or substracted from the
+    * state. This is because the connect method is also used
+    * to determine a succesful login; and before login there
+    * is no state to get credentials from yet.
     * @param {Boolean} [register] - Whether to register to the SIP endpoint.
     */
-    connect({register = true}) {
-        const account = this.app.state.settings.webrtc.account.selected
-        return new Promise((resolve, reject) => {
-            // Reconnect when already connected.
-            if (this.ua && this.ua.isConnected()) {
-                this.app.logger.debug(`${this}closing existing connection`)
-                this.disconnect(true)
-                return
-            }
+    connect({account = {}, endpoint = null, register = true}) {
+        if (!account.username || !account.password || !account.uri) {
+            this.app.logger.debug(`${this}using account info from state`)
+            account = this.app.state.settings.webrtc.account.selected
+        }
 
-            this._uaOptions = this.__uaOptions(account, register)
-            this.app.logger.debug(`${this}connecting to ${this._uaOptions.wsServers} (register: ${this._uaOptions.register})`)
-            // Login with the WebRTC account or platform account.
-            if (!this._uaOptions.authorizationUser || !this._uaOptions.password) {
-                this.app.logger.error(`${this}cannot connect without username and password`)
-            }
+        // Reconnect when already connected.
+        if (this.ua && this.ua.isConnected()) {
+            this.app.logger.debug(`${this}closing existing connection`)
+            this.disconnect(true)
+            return
+        }
 
-            // Fresh new instance is used each time, so we can reset settings properly.
-            this.ua = new SIP.UA(this._uaOptions)
-            this.__uaEvents(resolve, reject)
-            this.ua.start()
-        })
+        this._uaOptions = this.__uaOptions(account, endpoint, register)
+        this.app.logger.debug(`${this}connecting to ${this._uaOptions.wsServers} (register: ${this._uaOptions.register})`)
+        // Login with the WebRTC account or platform account.
+        if (!this._uaOptions.authorizationUser || !this._uaOptions.password) {
+            this.app.logger.error(`${this}cannot connect without username and password`)
+        }
+
+        // Fresh new instance is used each time, so we can reset settings properly.
+        this.ua = new SIP.UA(this._uaOptions)
+        this.__uaEvents()
+        this.ua.start()
     }
 
 
@@ -852,6 +863,14 @@ class ModuleCalls extends Module {
             }
         }
         return matchedCall
+    }
+
+
+    register(...args) {
+        return new Promise((resolve, reject) => {
+            this.__registerPromise = {reject, resolve}
+            this.connect(...args)
+        })
     }
 
 

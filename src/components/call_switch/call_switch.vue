@@ -10,7 +10,7 @@
         <icon :name="callIcon(call)"/>
     </div>
     <!-- Create new Call button -->
-    <div :data-tooltip="$t('setup new call')" class="call tooltip tooltip-left" v-if="newCallAllowed()" @click="createCall(false, false)">
-        <icon name="dialpad"/>
+    <div :data-tooltip="$t('setup new call').capitalize()" class="call new-call tooltip tooltip-left" v-if="newCallAllowed()" @click="createCall(false, false)">
+        <icon name="outgoing-call"/>
     </div>
 </component>

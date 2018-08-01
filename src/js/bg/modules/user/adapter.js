@@ -26,7 +26,9 @@ class UserAdapter {
             user: {username},
         }, {encrypt: false, persist: true})
 
-        await this.app.setState({user: userFields}, {persist: true})
+        await this.app.setState({
+            user: userFields},
+        {persist: true})
     }
 
 
@@ -79,6 +81,7 @@ class UserAdapter {
             this.app.notify({icon: 'user', message: this.app.$t('welcome back!'), type: 'info'})
             this.app.__initServices(true)
         } catch (err) {
+            // Wrong password, resulting in a failure to decrypt.
             this.app.setState({
                 ui: {layer: 'login'},
                 user: {authenticated: false},

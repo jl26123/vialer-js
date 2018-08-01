@@ -45,7 +45,7 @@ global.gulpSettings = settings
 settings.BUILD_ARCH = argv.arch ? argv.arch : 'x64' // all, or one or more of: ia32, x64, armv7l, arm64, mips64el
 settings.BUILD_DIR = process.env.BUILD_DIR || path.join('./', 'build')
 settings.BUILD_PLATFORM = argv.platform ? argv.platform : 'linux' // all, or one or more of: darwin, linux, mas, win32
-settings.BRAND_TARGET = argv.brand ? argv.brand : 'vialer'
+settings.BRAND_TARGET = argv.brand ? argv.brand : 'bologna'
 settings.BUILD_TARGET = argv.target ? argv.target : 'chrome'
 settings.BUILD_TARGETS = ['chrome', 'docs', 'electron', 'edge', 'firefox', 'node', 'webview']
 
@@ -353,29 +353,33 @@ gulp.task('js-vendor', (done) => {
 
 
 gulp.task('js-vendor-bg', 'Generate third-party vendor js.', [], (done) => {
-    helpers.jsEntry(settings.BRAND_TARGET, settings.BUILD_TARGET, 'bg/vendor', 'vendor_bg', [], done)
+    helpers.jsEntry(settings.BRAND_TARGET, settings.BUILD_TARGET, 'bg/vendor', 'vendor_bg', [])
+        .then(() => {
+            done()
+        })
 }, {options: taskOptions.all})
 
 
 gulp.task('js-vendor-fg', 'Generate third-party vendor js.', (done) => {
-    helpers.jsEntry(
-        settings.BRAND_TARGET, settings.BUILD_TARGET, 'fg/vendor', 'vendor_fg',
-        [`./src/brand/${settings.BRAND_TARGET}/icons/index.js`], () => {
+    helpers.jsEntry(settings.BRAND_TARGET, settings.BUILD_TARGET, 'fg/vendor', 'vendor_fg',
+        [`./src/brand/${settings.BRAND_TARGET}/icons/index.js`])
+        .then(() => {
             done()
         })
 }, {options: taskOptions.all})
 
 
 gulp.task('js-app-bg', 'Generate the extension background entry js.', (done) => {
-    helpers.jsEntry(settings.BRAND_TARGET, settings.BUILD_TARGET, 'bg/index', 'app_bg', [], () => {
-        if (settings.LIVERELOAD) livereload.changed('app_bg.js')
-        if (WATCHTEST) runSequence(['test'], done)
-        else done()
-    })
+    helpers.jsEntry(settings.BRAND_TARGET, settings.BUILD_TARGET, 'bg/index', 'app_bg', [])
+        .then(() => {
+            if (settings.LIVERELOAD) livereload.changed('app_bg.js')
+            if (WATCHTEST) runSequence(['test'], done)
+            else done()
+        })
 }, {options: taskOptions.browser})
 
 
-gulp.task('js-app-modules', 'Generate background modules js.', (done) => {
+gulp.task('js-app-modules', 'Generate background modules js.', ['translations'], (done) => {
     const builtin = settings.brands[settings.BRAND_TARGET].modules.builtin
     const custom = settings.brands[settings.BRAND_TARGET].modules.custom
 
@@ -391,7 +395,7 @@ gulp.task('js-app-modules', 'Generate background modules js.', (done) => {
 
 
 gulp.task('js-app-fg', 'Generate webextension fg/popout js.', (done) => {
-    helpers.jsEntry(settings.BRAND_TARGET, settings.BUILD_TARGET, 'fg/index', 'app_fg', [], () => {
+    helpers.jsEntry(settings.BRAND_TARGET, settings.BUILD_TARGET, 'fg/index', 'app_fg', []).then(() => {
         if (settings.LIVERELOAD) livereload.changed('app_fg.js')
         if (WATCHTEST) runSequence(['test'], done)
         else done()
@@ -400,7 +404,7 @@ gulp.task('js-app-fg', 'Generate webextension fg/popout js.', (done) => {
 
 
 gulp.task('js-app-observer', 'Generate WebExtension icon observer which runs in all tab frames.', (done) => {
-    helpers.jsEntry(settings.BRAND_TARGET, settings.BUILD_TARGET, 'observer/index', 'app_observer', [], () => {
+    helpers.jsEntry(settings.BRAND_TARGET, settings.BUILD_TARGET, 'observer/index', 'app_observer', []).then(() => {
         if (WATCHTEST) runSequence(['test'], done)
         else done()
     })
@@ -442,11 +446,10 @@ gulp.task('scss-app', 'Generate application css.', () => {
                 gutil.log(`[fg] addon styles for ${moduleName} (${addon})`)
                 sources.push(path.join(settings.NODE_PATH, dirName, 'src', 'components', '**', '*.scss'))
             }
-        } else if (sectionModule.fg) {
-            const dirName = sectionModule.fg.split('/')[0]
-            gutil.log(`[fg] addon styles for ${moduleName} (${sectionModule.fg})`)
+        } else if (sectionModule.parts && sectionModule.parts.includes('fg')) {
+            gutil.log(`[fg] addon styles for ${moduleName} (${sectionModule.name})`)
             // The module may include a path to the source file.
-            sources.push(path.join(settings.NODE_PATH, dirName, 'src', 'components', '**', '*.scss'))
+            sources.push(path.join(settings.NODE_PATH, sectionModule.name, 'src', 'components', '**', '*.scss'))
         }
     }
 
@@ -493,17 +496,17 @@ gulp.task('templates', 'Compile builtin and module Vue component templates', () 
     const sectionModules = Object.assign(builtin, custom)
     for (const moduleName of Object.keys(sectionModules)) {
         const sectionModule = sectionModules[moduleName]
+
         if (sectionModule.addons && sectionModule.addons.fg.length) {
             for (const addon of sectionModule.addons.fg) {
                 const dirName = addon.split('/')[0]
                 gutil.log(`[fg] addon templates for ${moduleName} (${addon})`)
                 sources.push(path.join(settings.NODE_PATH, dirName, 'src', 'components', '**', '*.vue'))
             }
-        } else if (sectionModule.fg) {
-            const dirName = sectionModule.fg.split('/')[0]
-            gutil.log(`[fg] custom templates for ${moduleName} (${sectionModule.fg})`)
+        } else if (sectionModule.parts && sectionModule.parts.includes('fg')) {
+            gutil.log(`[fg] custom templates for ${moduleName} (${sectionModule.name})`)
             // The module may include a path to the source file.
-            sources.push(path.join(settings.NODE_PATH, dirName, 'src', 'components', '**', '*.vue'))
+            sources.push(path.join(settings.NODE_PATH, sectionModule.name, 'src', 'components', '**', '*.vue'))
         }
     }
 
@@ -549,12 +552,15 @@ gulp.task('test-browser', 'Run all functional tests on the webview', ['build'], 
 
 
 gulp.task('translations', 'Generate translations', (done) => {
-    return gulp.src('./src/js/i18n/*.js', {base: './src/js/'})
-        .pipe(concat('translations.js'))
-        .pipe(ifElse(settings.PRODUCTION, () => minifier()))
-        .pipe(gulp.dest(path.join(settings.BUILD_DIR, settings.BRAND_TARGET, settings.BUILD_TARGET, 'js')))
-        .pipe(size(_extend({title: 'js-translations'}, settings.SIZE_OPTIONS)))
-        .pipe(ifElse(settings.LIVERELOAD, livereload))
+    const builtin = settings.brands[settings.BRAND_TARGET].modules.builtin
+    const custom = settings.brands[settings.BRAND_TARGET].modules.custom
+    Promise.all([
+        helpers.jsModules(settings.BRAND_TARGET, settings.BUILD_TARGET, Object.assign(builtin, custom), 'i18n'),
+        helpers.jsEntry(settings.BRAND_TARGET, settings.BUILD_TARGET, 'i18n/index', 'app_i18n', []),
+    ]).then(() => {
+        if (settings.LIVERELOAD) livereload.changed('app_i18n.js')
+        done()
+    })
 })
 
 
@@ -631,15 +637,21 @@ gulp.task('watch', 'Start development server and watch for changes.', () => {
         path.join(settings.NODE_PATH, 'vjs-addon-*', 'src', 'components', '**', '*.vue'),
         path.join(settings.NODE_PATH, 'vjs-mod-*', 'src', 'components', '**', '*.vue'),
     ], ['templates'])
-    gulp.watch(path.join(__dirname, 'src', 'js', 'i18n', '**', '*.js'), ['translations'])
+    gulp.watch([
+        path.join(__dirname, 'src', 'js', 'i18n', '*.js'),
+        path.join(settings.NODE_PATH, 'vjs-adapter-*', 'src', 'js', 'i18n', '*.js'),
+        path.join(settings.NODE_PATH, 'vjs-addon-*', 'src', 'js', 'i18n', '*.js'),
+        path.join(settings.NODE_PATH, 'vjs-mod-*', 'src', 'js', 'i18n', '*.js'),
+        path.join(settings.NODE_PATH, 'vjs-provider-*', 'src', 'js', 'i18n', '*.js'),
+    ], ['translations'])
     gulp.watch(path.join(__dirname, 'test', '**', '*.js'), ['test'])
 
     gulp.watch([
         // Glob for addons and custom modules includes both component and module js.
+        path.join(settings.NODE_PATH, 'vjs-adapter-*', 'src', '**', '*.js'),
         path.join(settings.NODE_PATH, 'vjs-addon-*', 'src', '**', '*.js'),
         path.join(settings.NODE_PATH, 'vjs-mod-*', 'src', '**', '*.js'),
-        path.join(settings.NODE_PATH, 'vjs-adapter-*', 'index.js'),
-        path.join(settings.NODE_PATH, 'vjs-provider-*', 'index.js'),
+        path.join(settings.NODE_PATH, 'vjs-provider-*', 'src', '**', '*.js'),
     ], ['js-app-modules'])
 
     // Add linked packages here that are used during development.

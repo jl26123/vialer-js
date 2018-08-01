@@ -75,7 +75,7 @@ body {
 
         &:checked + label {
             &::before {
-                background: $green-color;
+                background: $brand-accent-color;
             }
         }
     }

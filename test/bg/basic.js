@@ -2,36 +2,36 @@ const fs = require('fs').promises
 const util = require('util')
 
 const glob = util.promisify(require('glob'))
+const rc = require('rc')
 const test = require('tape')
 
+let settings = {}
+rc('vialer-js', settings)
 
 require('../../src/js/bg/vendor')
 require('../../src/js/i18n/nl')
+
+
 const {AppBackground, options} = require('../../src/js/bg')
+// Load modules manually from settings.
+const availabilityAddons = settings.brands.bologna.modules.builtin.availability.addons
+const contactProviders = settings.brands.bologna.modules.builtin.contacts.providers
+const userAdapter = settings.brands.bologna.modules.builtin.user.adapter
+options.modules.builtin.find((i) => i.name === 'availability').addons = availabilityAddons
+options.modules.builtin.find((i) => i.name === 'contacts').providers = contactProviders
+options.modules.builtin.find((i) => i.name === 'user').adapter = userAdapter
+options.modules.custom = settings.brands.bologna.modules.custom
 
 
 test('[bg] starting up sequence', function(t) {
-    t.plan(3)
+    t.plan(2)
+
     const bg = new AppBackground(options)
-    console.log(options.modules.builtin)
     // There is no schema in the database on a fresh start.
     t.equal(bg.store.get('schema'), null, 'storage: schema absent on startup')
     bg.on('factory-defaults', () => {
-        console.log("FACTORY")
         // The schema is set after a factory reset.
         t.equal(bg.store.get('schema'), bg.store.schema, `storage: schema version (${bg.store.schema}) present after factory reset`)
-    })
-
-    // UA status starts as `inactive`. There is a watcher for `store.calls.ua.status`,
-    // which adapts the mnubar status accordingly. This check makes sure that the
-    // watcher mechanism picks up the change.
-    bg.on('ready', () => {
-        console.log("READY")
-        bg.state.user.authenticated = true
-        bg.setState({calls: {ua: {status: 'registered'}}})
-        Vue.nextTick(function() {
-            t.equal(bg.state.ui.menubar.base, 'disconnected', 'watchers: initialized watchers pick up changes')
-        })
     })
 })
 

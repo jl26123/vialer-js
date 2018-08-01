@@ -81,7 +81,7 @@
 
         .session {
             align-items: center;
-            background: $grey-color-lighter;
+            background: $grey-color-lightest;
             border-bottom: 2px solid $grey-color-lighter;
             border-top: 2px solid transparent;
             display: flex;
@@ -107,7 +107,7 @@
             }
 
             &:hover {
-                border-bottom: 2px solid $brand-color;
+                border-bottom: 2px solid $brand-accent-color;
                 cursor: pointer;
 
                 .icon-session svg {

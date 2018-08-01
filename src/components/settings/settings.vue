@@ -46,11 +46,11 @@
             placeholder="https://"/>
 
         <Field v-if="user.developer || !settings.platform.enabled" name="sip_endpoint" type="text"
-            :label="$t('SIP server')"
-            :model.sync="settings.sipEndpoint"
+            :label="$t('webRTC endpoint')"
+            :model.sync="settings.webrtc.endpoint.uri"
             :help="$t('domainname of the SIP server with websocket support.')"
             :placeholder="$t('SIP server')"
-            :validation="$v.settings.sipEndpoint"/>
+            :validation="$v.settings.webrtc.endpoint.uri"/>
     </div>
 
     <!-- Privacy settings -->

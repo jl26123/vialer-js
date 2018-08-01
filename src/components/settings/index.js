@@ -26,7 +26,7 @@ module.exports = (app) => {
 
                 // Update the vault settings.
                 app.setState({app: {vault: this.app.vault}}, {encrypt: false, persist: true})
-                app.notify({icon: 'settings', message: app.$t('settings are updated'), type: 'success'})
+                app.notify({icon: 'settings', message: app.$t('settings are updated.'), type: 'success'})
             },
         }, app.helpers.sharedMethods()),
         mounted: async function() {
@@ -49,15 +49,13 @@ module.exports = (app) => {
         validations: function() {
             let validations = {
                 settings: {
-                    platform: {
-                        url: {
-                            required: v.required,
-                            url: v.url,
+                    webrtc: {
+                        endpoint: {
+                            uri: {
+                                domain: app.helpers.validators.domain,
+                                required: v.required,
+                            },
                         },
-                    },
-                    sipEndpoint: {
-                        domain: app.helpers.validators.domain,
-                        required: v.required,
                     },
                 },
             }

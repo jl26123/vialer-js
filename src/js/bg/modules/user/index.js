@@ -15,8 +15,6 @@ const Module = require('../../lib/module')
 class ModuleUser extends Module {
     /**
     * Setup events that can be called upon from `AppForeground`.
-    * The update-token event is called each time when a user
-    * opens a vendor platform url through `openPlatformUrl`.
     * @param {AppBackground} app - The background application.
     * @param {UserProvider} UserAdapter - An adapter that handles authentication and authorization.
     */

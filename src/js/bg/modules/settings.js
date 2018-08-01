@@ -18,7 +18,7 @@ class ModuleSettings extends Module {
     * @returns {Object} The module's store properties.
     */
     _initialState() {
-        return {
+        let state = {
             click2dial: {
                 blacklist: [
                     '^chrome',
@@ -54,7 +54,6 @@ class ModuleSettings extends Module {
                 ],
                 selected: {id: 1, name: 'default.ogg'},
             },
-            sipEndpoint: process.env.SIP_ENDPOINT,
             telemetry: {
                 analyticsId: process.env.ANALYTICS_ID,
                 clientId: null,
@@ -90,6 +89,9 @@ class ModuleSettings extends Module {
                     },
                 },
                 enabled: false,
+                endpoint: {
+                    uri: process.env.SIP_ENDPOINT,
+                },
                 media: {
                     permission: true,
                     type: {
@@ -117,6 +119,10 @@ class ModuleSettings extends Module {
                 },
             },
         }
+
+        // The selection flag determines whether the UI should include endpoint selection.
+        state.webrtc.endpoint.selection = Boolean(state.webrtc.endpoint.uri)
+        return state
     }
 
 
@@ -129,14 +135,6 @@ class ModuleSettings extends Module {
     * disabled.
     */
     _ready() {
-        const vaultUnlocked = this.app.state.app.vault.unlocked
-        const mediaPermission = this.app.state.settings.webrtc.media.permission
-        const isAuthenticated = this.app.state.user.authenticated
-
-        if (vaultUnlocked && mediaPermission && isAuthenticated) {
-            this.app.devices.verifySinks()
-        }
-
         if (this.app.state.settings.telemetry.enabled) {
             const release = process.env.VERSION + '-' + process.env.DEPLOY_TARGET + '-' + process.env.BRAND_NAME + '-' + this.app.env.name
             this.app.logger.info(`${this}monitoring exceptions for release ${release}`)
@@ -217,10 +215,10 @@ class ModuleSettings extends Module {
             },
             /**
             * The default value is true.
+            * @param {Boolean} enabled - Whether the permission is granted.
             */
             'store.settings.webrtc.media.permission': (enabled) => {
                 if (enabled) {
-                    console.log("CHANGED")
                     this.app.devices.verifySinks()
                 }
             },

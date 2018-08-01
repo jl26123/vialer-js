@@ -21,8 +21,8 @@ module.exports = (app) => {
             },
             callIcon: function(call) {
                 if (call.status === 'new') {
-                    if (call.active) return 'close'
-                    else return 'dialpad'
+                    if (call.active) return 'missed-call'
+                    else return 'outgoing-call'
                 } else if (['answered_elsewhere', 'bye', 'rejected_a', 'rejected_b'].includes(call.status)) {
                     return 'hang-up'
                 } else {
@@ -35,7 +35,7 @@ module.exports = (app) => {
             callTitle: function(call) {
                 const translations = app.helpers.getTranslations().call
                 if (call.status === 'new') {
-                    if (call.active) return this.$t('close new call')
+                    if (call.active) return this.$t('close new call').capitalize()
                     else return `${this.$t('select new call')}`.capitalize()
                 } else {
                     let text = `${call.number} - `

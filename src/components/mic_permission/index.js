@@ -8,17 +8,6 @@ module.exports = (app) => {
         },
         computed: app.helpers.sharedComputed(),
         methods: Object.assign({}, app.helpers.sharedMethods()),
-        mounted: function() {
-            // Keep an eye on the media permission while being mounted.
-            this.intervalId = setInterval(async() => {
-                try {
-                    await app.__initMedia()
-                } catch (err) {
-                    // An exception means something else than a lack of permission.
-                    clearInterval(this.intervalId)
-                }
-            }, 50)
-        },
         props: {
             soundmeter: {default: true},
         },

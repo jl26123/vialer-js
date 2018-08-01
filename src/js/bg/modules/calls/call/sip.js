@@ -97,7 +97,7 @@ class CallSIP extends Call {
         super._outgoing()
         this.session = this.module.ua.invite(`sip:${this.state.number}@voipgrid.nl`, {
             sessionDescriptionHandlerOptions: {
-                constraints: this.app._getUserMediaFlags(),
+                constraints: this.app.media._getUserMediaFlags(),
             },
         })
 
@@ -188,7 +188,7 @@ class CallSIP extends Call {
         })
         this.session.accept({
             sessionDescriptionHandlerOptions: {
-                constraints: this.app._getUserMediaFlags(),
+                constraints: this.app.media._getUserMediaFlags(),
             },
         })
     }
@@ -198,7 +198,7 @@ class CallSIP extends Call {
         if (this.session) {
             this.session.hold({
                 sessionDescriptionHandlerOptions: {
-                    constraints: this.app._getUserMediaFlags(),
+                    constraints: this.app.media._getUserMediaFlags(),
                 },
             })
             this.setState({hold: {active: true}})
@@ -214,7 +214,7 @@ class CallSIP extends Call {
             // Query media and assign the stream. The actual permission must be
             // already granted from a foreground script running in a tab.
             try {
-                await this._initMedia()
+                await this._initSinks()
                 if (this.state.status === 'invite') this._incoming()
                 else this._outgoing()
             } catch (err) {
@@ -285,7 +285,7 @@ class CallSIP extends Call {
         if (this.session) {
             this.session.unhold({
                 sessionDescriptionHandlerOptions: {
-                    constraints: this.app._getUserMediaFlags(),
+                    constraints: this.app.media._getUserMediaFlags(),
                 },
             })
             this.setState({hold: {active: false}})

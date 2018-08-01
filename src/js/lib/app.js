@@ -1,3 +1,4 @@
+const Media = require('./media')
 const Skeleton = require('./skeleton')
 const Sounds = require('./sounds')
 
@@ -18,9 +19,14 @@ class App extends Skeleton {
         // is replaced by the actual translation method after the store is
         // initialized. Used to detect in-code translations before the
         // application is initialized.
+
+        this.i18n = new I18nTranslations(this, options.modules)
+
         this.$t = (text) => text
         this.filters = require('./filters')(this)
         this.helpers = require('./helpers')(this)
+
+        this.media = new Media(this)
         // Contains all registered App modules.
         this.modules = {}
         this._modules = options.modules
@@ -51,40 +57,6 @@ class App extends Skeleton {
             return obj[keypath[0]]
         } else {
             return this.__getKeyPath(obj[keypath[0]], keypath.slice(1))
-        }
-    }
-
-
-    /**
-    * Silently try to initialize media access, unless the error is not
-    * related to a lack of permission.
-    */
-    async __initMedia() {
-        // Check media permission at the start of the bg/fg.
-        if (!this.env.isFirefox && !this.env.isNode) {
-            try {
-                await navigator.mediaDevices.getUserMedia(this._getUserMediaFlags())
-                this.setState({settings: {webrtc: {media: {permission: true}}}})
-                const devices = this.state.settings.webrtc.devices
-                // Early device query.
-                if (!devices.input.length || !devices.output.length) {
-                    this.emit('bg:devices:verify-sinks')
-                }
-            } catch (err) {
-                // There are no devices at all. Spawn a warning.
-                if (err.message === 'Requested device not found') {
-                    if (this.env.role.fg) {
-                        this.notify({icon: 'warning', message: this.$t('no audio devices found.'), type: 'warning'})
-                    }
-                    throw new Error(err)
-                }
-
-                // This error also may be triggered when there are no devices
-                // at all. The browser sometimes has issues finding any devices.
-                this.setState({settings: {webrtc: {media: {permission: false}}}})
-            }
-        } else {
-            this.setState({settings: {webrtc: {media: {permission: false}}}})
         }
     }
 
@@ -122,7 +94,9 @@ class App extends Skeleton {
         const i18nStore = new I18nStore(this.state)
         Vue.use(i18n, i18nStore)
 
-        for (const [id, translation] of Object.entries(translations)) Vue.i18n.add(id, translation)
+        for (const [id, translation] of Object.entries(this.i18n.translations)) {
+            Vue.i18n.add(id, translation)
+        }
 
         let selectedLanguage = this.state.settings.language.selected.id
 
@@ -149,7 +123,7 @@ class App extends Skeleton {
         this.logger.info(`${this}selected language: ${selectedLanguage}`)
         Vue.i18n.set(selectedLanguage)
 
-        // Add a simple reference to the translation module.
+        // Add a shortcut to the translation module.
         this.$t = Vue.i18n.translate
         this.vm = new Vue({
             data: {store: this.state},
@@ -173,19 +147,27 @@ class App extends Skeleton {
 
 
     /**
-    * Loads foreground or background modules.
+    * Load section modules from browserified modules. This is basically
+    * the browser-side of the `jsModules` browserify handler in
+    * `tasks/helpers.js`.
     * @param {Object} moduleList - See .vialer-jsrc.example for the format.
     */
     __loadModules(moduleList) {
         // Start by initializing builtin modules.
         for (const builtin of moduleList.builtin) {
             if (builtin.addons) {
-                this.modules[builtin.name] = new builtin.module(this, builtin.addons[this._appSection].map((addon) => require(addon)))
+                const addonModules = builtin.addons[this._appSection].map((addon) => {
+                    return require(`${addon}/src/js/${this._appSection}`)
+                })
+                this.modules[builtin.name] = new builtin.module(this, addonModules)
             } else if (builtin.providers) {
-                const providers = builtin.providers.map((mod) => require(mod))
-                this.modules[builtin.name] = new builtin.module(this, providers)
+                const providerModules = builtin.providers.map((mod) => {
+                    return require(`${mod}/src/js/${this._appSection}`)
+                })
+                this.modules[builtin.name] = new builtin.module(this, providerModules)
             } else if (builtin.adapter) {
-                this.modules[builtin.name] = new builtin.module(this, require(builtin.adapter))
+                const adapterModule = require(`${builtin.adapter}/src/js/${this._appSection}`)
+                this.modules[builtin.name] = new builtin.module(this, adapterModule)
             } else {
                 // Other modules without any config.
                 this.modules[builtin.name] = new builtin.module(this, null)
@@ -195,9 +177,9 @@ class App extends Skeleton {
         // Then process custom modules.
         for (const moduleName of Object.keys(this._modules.custom)) {
             const customModule = this._modules.custom[moduleName]
-            if (customModule[this._appSection]) {
-                const Module = require(customModule[this._appSection])
-                this.modules[moduleName] = new Module(this)
+            if (customModule.parts.includes(this._appSection)) {
+                const CustomModule = require(`${customModule.name}/src/js/${this._appSection}`)
+                this.modules[moduleName] = new CustomModule(this)
             }
         }
     }
@@ -288,39 +270,6 @@ class App extends Skeleton {
         } else {
             return this.__setKeyPath(obj[keypath[0]], keypath.slice(1), value)
         }
-    }
-
-
-    /**
-    * Return the getUserMedia flags based on the user's settings.
-    * @returns {Object} - Supported flags for getUserMedia.
-    */
-    _getUserMediaFlags() {
-        this.userMediaFlags = {
-            AUDIO_NOPROCESSING: {
-                audio: {
-                    echoCancellation: false,
-                    googAudioMirroring: false,
-                    googAutoGainControl: false,
-                    googAutoGainControl2: false,
-                    googEchoCancellation: false,
-                    googHighpassFilter: false,
-                    googNoiseSuppression: false,
-                    googTypingNoiseDetection: false,
-                },
-            },
-            AUDIO_PROCESSING: {
-                audio: {},
-            },
-        }
-
-        const userMediaFlags = this.userMediaFlags[this.state.settings.webrtc.media.type.selected.id]
-        const inputSink = this.state.settings.webrtc.devices.sinks.headsetInput.id
-
-        if (inputSink && inputSink !== 'default') {
-            userMediaFlags.audio.deviceId = inputSink
-        }
-        return userMediaFlags
     }
 
 

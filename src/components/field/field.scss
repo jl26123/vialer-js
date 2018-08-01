@@ -59,7 +59,6 @@
             select {
                 border-bottom-right-radius: 0;
                 border-top-right-radius: 0;
-                max-width: 300px;
 
                 &:active,
                 &:focus {
@@ -101,7 +100,7 @@
                 pointer-events: auto;
 
                 &.visible {
-                    color: $red-color;
+                    color: $brand-accent-color;
                 }
 
                 svg:hover {

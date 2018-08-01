@@ -3,7 +3,7 @@
         "bologna": {
             "colors": {
                 "brand-color": "#2e3547",
-                "brand-variation-color": "#f2cc10",
+                "brand-accent-color": "#f2cc10",
                 "green-color": "#28ca42",
                 "grey-color": "#888",
                 "orange-color": "#f98644",
@@ -15,14 +15,17 @@
                     "availability": {
                         "addons": {
                             "bg": [],
-                            "fg": []
+                            "fg": [],
+                            "i18n": []
                         }
                     },
                     "contacts": {
+                        "i18n": [],
                         "providers": []
                     },
                     "user": {
-                        "adapter": "vjs-adapter-user-voip"
+                        "adapter": "vjs-adapter-user-voip",
+                        "i18n": []
                     }
                 },
                 "custom": {}
