@@ -2,7 +2,7 @@ module.exports = (app, shared) => {
     /**
     * @memberof fg.components
     */
-    const WizardStepTelemetry = {
+    const WizardTelemetry = {
         computed: app.helpers.sharedComputed(),
         methods: Object.assign({
             toggleTelemetry: function(enabled) {
@@ -10,8 +10,8 @@ module.exports = (app, shared) => {
                 this.stepNext()
             },
         }, shared().methods),
-        render: templates.wizard_step_telemetry.r,
-        staticRenderFns: templates.wizard_step_telemetry.s,
+        render: templates.wizard_telemetry.r,
+        staticRenderFns: templates.wizard_telemetry.s,
         store: {
             app: 'app',
             options: 'settings.wizard.steps.options',
@@ -20,5 +20,5 @@ module.exports = (app, shared) => {
         },
     }
 
-    return WizardStepTelemetry
+    return WizardTelemetry
 }

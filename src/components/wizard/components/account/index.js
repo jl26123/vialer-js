@@ -2,7 +2,7 @@ module.exports = (app, shared) => {
     /**
     * @memberof fg.components
     */
-    const WizardStepAccount = {
+    const WizardAccount = {
         computed: Object.assign({
             stepValid: function() {
                 const selectedAccountId = this.settings.webrtc.account.selected.id
@@ -26,8 +26,8 @@ module.exports = (app, shared) => {
             this.$v.$reset()
             app.state.settings.webrtc.toggle = true
         },
-        render: templates.wizard_step_account.r,
-        staticRenderFns: templates.wizard_step_account.s,
+        render: templates.wizard_account.r,
+        staticRenderFns: templates.wizard_account.s,
         store: {
             account: 'settings.webrtc.account',
             app: 'app',
@@ -48,5 +48,5 @@ module.exports = (app, shared) => {
         },
     }
 
-    return WizardStepAccount
+    return WizardAccount
 }

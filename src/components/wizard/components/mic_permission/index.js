@@ -2,15 +2,15 @@ module.exports = (app, shared) => {
     /**
     * @memberof fg.components
     */
-    const WizardStepMicPermission = {
+    const WizardMicPermission = {
         computed: Object.assign({
             stepValid: function() {
                 return this.permission
             },
         }, app.helpers.sharedComputed()),
         methods: shared().methods,
-        render: templates.wizard_step_mic_permission.r,
-        staticRenderFns: templates.wizard_step_mic_permission.s,
+        render: templates.wizard_mic_permission.r,
+        staticRenderFns: templates.wizard_mic_permission.s,
         store: {
             app: 'app',
             options: 'settings.wizard.steps.options',
@@ -19,5 +19,5 @@ module.exports = (app, shared) => {
         },
     }
 
-    return WizardStepMicPermission
+    return WizardMicPermission
 }

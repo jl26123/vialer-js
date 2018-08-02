@@ -20,11 +20,11 @@ module.exports = (app) => {
         }
     }
 
-    app.components.WizardStepAccount = Vue.component('WizardStepAccount', require('./components/step_account')(app, shared))
-    app.components.WizardStepDevices = Vue.component('WizardStepDevices', require('./components/step_devices')(app, shared))
-    app.components.WizardStepMicPermission = Vue.component('WizardStepMicPermission', require('./components/step_mic_permission')(app, shared))
-    app.components.WizardStepTelemetry = Vue.component('WizardStepTelemetry', require('./components/step_telemetry')(app, shared))
-    app.components.WizardStepWelcome = Vue.component('WizardStepWelcome', require('./components/step_welcome')(app, shared))
+    app.components.WizardAccount = Vue.component('WizardAccount', require('./components/account')(app, shared))
+    app.components.WizardDevices = Vue.component('WizardDevices', require('./components/devices')(app, shared))
+    app.components.WizardMicPermission = Vue.component('WizardMicPermission', require('./components/mic_permission')(app, shared))
+    app.components.WizardTelemetry = Vue.component('WizardTelemetry', require('./components/telemetry')(app, shared))
+    app.components.WizardWelcome = Vue.component('WizardWelcome', require('./components/welcome')(app, shared))
     /**
     * @memberof fg.components
     */
@@ -35,7 +35,7 @@ module.exports = (app) => {
                 app.setState({
                     settings: {
                         webrtc: {enabled: true, toggle: true},
-                        wizard: {steps: {options: this.steps.options.filter((step) => step.name !== 'WizardStepAccount')}},
+                        wizard: {steps: {options: this.steps.options.filter((step) => step.name !== 'WizardAccount')}},
                     },
                 }, {persist: true})
             }

@@ -77,6 +77,13 @@
                     "project": "bologna"
                 }
             },
+            "tests": {
+                "headless": true,
+                "endpoint": "",
+                "username": "",
+                "password": "",
+                "port": 8999
+            },
             "vendor": {
                 "name": "Bologna",
                 "portal": {
@@ -89,14 +96,6 @@
                     "website": "https://vialer-js.io"
                 }
             }
-        }
-    },
-    "tests": {
-        "integration": {
-            "headless": true,
-            "username": "",
-            "password": "",
-            "port": 8999
         }
     }
 }

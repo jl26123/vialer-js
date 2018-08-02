@@ -109,13 +109,13 @@ class ModuleSettings extends Module {
                 completed: false,
                 steps: {
                     options: [
-                        {name: 'WizardStepWelcome'},
-                        {name: 'WizardStepTelemetry'},
-                        {name: 'WizardStepAccount'},
-                        {name: 'WizardStepMicPermission'},
-                        {name: 'WizardStepDevices'},
+                        {name: 'WizardWelcome'},
+                        {name: 'WizardTelemetry'},
+                        {name: 'WizardAccount'},
+                        {name: 'WizardMicPermission'},
+                        {name: 'WizardDevices'},
                     ],
-                    selected: {name: 'WizardStepWelcome'},
+                    selected: {name: 'WizardWelcome'},
                 },
             },
         }

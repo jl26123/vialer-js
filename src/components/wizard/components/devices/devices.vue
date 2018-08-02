@@ -1,4 +1,4 @@
-<component class="component-step-devices">
+<component class="component-wizard-devices">
     <header class="ca">{{$t('audio settings')}}</header>
 
     <div class="step-description">
@@ -9,10 +9,10 @@
     <slot name="progress"></slot>
 
     <div class="buttons is-centered">
-        <button class="button cf test-step-telemetry-button-yes is-left" @click="stepBack()">
+        <button class="button cf test-wizard-devices-back is-left" @click="stepBack()">
             {{$t('back')}}
         </button>
-        <button class="button is-primary cf test-step-telemetry-button-yes" @click="storeDevices()" :disabled="!stepValid">
+        <button class="button is-primary cf test-wizard-devices-next" @click="storeDevices()" :disabled="!stepValid">
             {{$t('finish')}}
         </button>
     </div>

@@ -2,13 +2,13 @@ module.exports = (app, shared) => {
     /**
     * @memberof fg.components
     */
-    const WizardStepWelcome = {
+    const WizardWelcome = {
         computed: app.helpers.sharedComputed(),
         methods: Object.assign({
 
         }, shared().methods),
-        render: templates.wizard_step_welcome.r,
-        staticRenderFns: templates.wizard_step_welcome.s,
+        render: templates.wizard_welcome.r,
+        staticRenderFns: templates.wizard_welcome.s,
         store: {
             app: 'app',
             options: 'settings.wizard.steps.options',
@@ -16,5 +16,5 @@ module.exports = (app, shared) => {
         },
     }
 
-    return WizardStepWelcome
+    return WizardWelcome
 }

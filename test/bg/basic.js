@@ -11,7 +11,6 @@ rc('vialer-js', settings)
 require('../../src/js/bg/vendor')
 require('../../src/js/i18n')
 
-const BRAND = process.env.BRAND
 const {AppBackground, options} = require('../../src/js/bg')
 
 

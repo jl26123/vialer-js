@@ -114,7 +114,6 @@ class AppForeground extends App {
 }
 
 const options = require('./lib/options')
-console.log("OPTIONS", options)
 
 // Used in browser context to allow a context closure without
 // having to make an additional JavaScript build target.

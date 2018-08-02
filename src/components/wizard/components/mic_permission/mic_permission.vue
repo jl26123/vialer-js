@@ -1,4 +1,4 @@
-<component class="component-step-mic-permission">
+<component class="component-wizard-mic-permission">
     <header class="cf">{{$t('microphone access')}}</header>
 
     <div class="step-description">
@@ -11,11 +11,11 @@
         <slot name="progress"></slot>
 
         <div class="buttons is-centered">
-            <button class="button cf test-step-telemetry-button-yes is-left" @click="stepBack()">
+            <button class="button cf test-wizard-mic-permission-back is-left" @click="stepBack()">
                 {{$t('back')}}
             </button>
 
-            <button class="button is-primary cf test-step-telemetry-button-yes" @click="stepNext()" :disabled="!stepValid">
+            <button class="button is-primary cf test-wizard-mic-permission-next" @click="stepNext()" :disabled="!stepValid">
                 {{$t('setup audio')}}
             </button>
         </div>

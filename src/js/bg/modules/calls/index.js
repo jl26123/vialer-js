@@ -755,7 +755,7 @@ class ModuleCalls extends Module {
     * is no state to get credentials from yet.
     * @param {Boolean} [register] - Whether to register to the SIP endpoint.
     */
-    connect({account = {}, endpoint = null, register = true}) {
+    connect({account = {}, endpoint = null, register = true} = {}) {
         if (!account.username || !account.password || !account.uri) {
             this.app.logger.debug(`${this}using account info from state`)
             account = this.app.state.settings.webrtc.account.selected

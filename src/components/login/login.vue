@@ -34,7 +34,7 @@
     <!-- Login without any sessions, or when selecting a new session.-->
     <div v-else-if="!app.session.available.length || app.session.active === 'new' || user.status === 'login'">
 
-        <Field v-if="!settings.webrtc.endpoint.selection" name="sip_endpoint" type="text"
+        <Field v-if="!settings.webrtc.endpoint.selection" name="endpoint" type="text"
             :label="$t('SIP websocket domain')"
             :model.sync="settings.webrtc.endpoint.uri"
             :help="$t('SIP provider with support for SIP over websockets and WebRTC.')"

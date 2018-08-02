@@ -45,7 +45,7 @@ global.gulpSettings = settings
 settings.BUILD_ARCH = argv.arch ? argv.arch : 'x64' // all, or one or more of: ia32, x64, armv7l, arm64, mips64el
 settings.BUILD_DIR = process.env.BUILD_DIR || path.join('./', 'build')
 settings.BUILD_PLATFORM = argv.platform ? argv.platform : 'linux' // all, or one or more of: darwin, linux, mas, win32
-settings.BRAND_TARGET = argv.brand ? argv.brand : 'bologna'
+settings.BRAND_TARGET = argv.brand ? argv.brand : process.env.BRAND ? process.env.BRAND : 'bologna'
 settings.BUILD_TARGET = argv.target ? argv.target : 'chrome'
 settings.BUILD_TARGETS = ['chrome', 'docs', 'electron', 'edge', 'firefox', 'node', 'webview']
 
@@ -68,7 +68,7 @@ if (!settings.BUILD_TARGETS.includes(settings.BUILD_TARGET)) {
     if (argv._[0] === 'test-browser') {
         settings.BUILD_TARGET = 'webview'
         // Make this variable accessible by tests.
-        process.env.BRAND_TARGET = settings.BRAND_TARGET
+        process.env.BRAND = settings.BRAND_TARGET
     }
 }
 

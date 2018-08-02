@@ -1,4 +1,4 @@
-<component class="component-step-account">
+<component class="component-wizard-account">
     <header class="ca">{{$t('softphone accounts')}}</header>
 
     <div class="step-description">
@@ -8,10 +8,10 @@
     <slot name="progress"></slot>
 
     <div class="buttons is-centered">
-        <button class="button cf test-step-voipaccount-back is-left" @click="stepBack()">
+        <button class="button cf test-wizard-account-back is-left" @click="stepBack()">
             {{$t('back')}}
         </button>
-        <button class="button is-primary cf test-step-voipaccount-choose" @click="chooseAccount()" :disabled="!stepValid">
+        <button class="button is-primary cf test-wizard-account-next" @click="chooseAccount()" :disabled="!stepValid">
             {{$t('choose account')}}
         </button>
     </div>

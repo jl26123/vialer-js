@@ -2,7 +2,7 @@ module.exports = (app, shared) => {
     /**
     * @memberof fg.components
     */
-    const WizardStepDevices = {
+    const WizardDevices = {
         beforeMount: function() {
             if (!this.devices.input.length || !this.devices.output.length) {
                 app.emit('bg:devices:verify-sinks')
@@ -22,8 +22,8 @@ module.exports = (app, shared) => {
                 this.finishWizard()
             },
         }, shared().methods),
-        render: templates.wizard_step_devices.r,
-        staticRenderFns: templates.wizard_step_devices.s,
+        render: templates.wizard_devices.r,
+        staticRenderFns: templates.wizard_devices.s,
         store: {
             app: 'app',
             devices: 'settings.webrtc.devices',
@@ -34,5 +34,5 @@ module.exports = (app, shared) => {
 
     }
 
-    return WizardStepDevices
+    return WizardDevices
 }
