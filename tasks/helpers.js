@@ -235,6 +235,7 @@ class Helpers {
             }
             BUNDLERS[bundleName].ignore('buffer')
             BUNDLERS[bundleName].ignore('process')
+            BUNDLERS[bundleName].ignore('rc')
             // Exclude the webextension polyfill from non-webextension builds.
             if (bundleName === 'webview') {
                 BUNDLERS[bundleName].ignore('webextension-polyfill')

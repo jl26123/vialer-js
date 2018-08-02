@@ -8,7 +8,7 @@
     // justify-content: space-between;
 
     &.call-ongoing {
-        background: $grey-color-lightest;
+        background: $white-tint-color-dark;
 
         .calls-container {
             display: grid;
@@ -51,7 +51,7 @@
 
     .soundmeter {
         align-items: center;
-        background: $white-tint-color-dark;
+        background: $white-tint-color-light;
         display: flex;
         height: $spacer * 1.5;
         justify-content: center;

@@ -202,7 +202,7 @@
                 color: $primary-color;
 
                 &::placeholder {
-                    color: $brand-accent-color;
+                    color: $grey-color;
                 }
             }
 
@@ -225,7 +225,7 @@
         }
 
         .contacts-match {
-            color: $primary-color;
+            color: $grey-color;
         }
     }
 }

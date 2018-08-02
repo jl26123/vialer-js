@@ -6,7 +6,6 @@ const Api = require('./lib/api')
 const App = require('../lib/app')
 const Crypto = require('./lib/crypto')
 const Devices = require('./lib/devices')
-const env = require('../lib/env')({role: 'bg'})
 const Store = require('./lib/store')
 const Telemetry = require('./lib/telemetry')
 
@@ -528,40 +527,12 @@ class AppBackground extends App {
     }
 }
 
-let options = {
-    env,
-    modules: {
-        builtin: [
-            {module: require('./modules/activity'), name: 'activity'},
-            {module: require('./modules/app'), name: 'app'},
-            {
-                addons: process.env.BUILTIN_AVAILABILITY_ADDONS,
-                module: require('./modules/availability'),
-                name: 'availability',
-            },
-            {module: require('./modules/calls'), name: 'calls'},
-            {
-                i18n: process.env.BUILTIN_CONTACTS_I18N,
-                module: require('./modules/contacts'),
-                name: 'contacts',
-                providers: process.env.BUILTIN_CONTACTS_PROVIDERS,
-            },
-            {module: require('./modules/settings'), name: 'settings'},
-            {module: require('./modules/ui'), name: 'ui'},
-            {
-                adapter: process.env.BUILTIN_USER_ADAPTER,
-                i18n: process.env.BUILTIN_USER_I18N,
-                module: require('./modules/user'),
-                name: 'user',
-            },
-        ],
-        custom: process.env.CUSTOM_MOD,
-    },
-}
 
-if (env.isBrowser) {
-    if (env.isExtension) {
-        options.modules.builtin.push({module: require('./modules/extension'), name: 'extension'})
+const options = require('./lib/options')
+
+if (options.env.isBrowser) {
+
+    if (options.env.isExtension) {
         Raven.context(function() {
             this.bg = new AppBackground(options)
         })

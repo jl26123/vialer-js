@@ -35,6 +35,21 @@ function helpers(app) {
         return activeCall
     }
 
+
+    _helpers.callAccepted = function() {
+        let accepted = false
+        const calls = app.state.calls.calls
+
+        for (const callId of Object.keys(calls)) {
+            const status = calls[callId].status
+            // An active Call is not a new Call, but may be a closing Call.
+            if (status === 'accepted') accepted = true
+        }
+
+        return accepted
+    }
+
+
     /**
     * Helper function to determine whether calling functionality
     * should be activated or not. Used both within and outside
@@ -129,7 +144,7 @@ function helpers(app) {
                 rejected_b: $t('callee is busy'),
             },
             callingDisabled: {
-                device: $t('audio device settings (invalid audio device)').capitalize(),
+                device: $t('audio device settings - invalid audio device').capitalize(),
                 disconnected: $t('not connected to service').capitalize(), // Non-WebRTC status.
                 mediaPermission: $t('microphone access denied').capitalize(),
                 offline: $t('internet connection is offline').capitalize(),
@@ -248,6 +263,7 @@ function helpers(app) {
     _helpers.sharedComputed = function() {
         return {
             activeCall: _helpers.activeCall,
+            callAccepted: _helpers.callAccepted,
             callingDisabled: _helpers.callingDisabled,
             callOngoing: _helpers.callOngoing,
             callsReady: _helpers.callsReady,

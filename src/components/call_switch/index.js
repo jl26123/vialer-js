@@ -21,8 +21,8 @@ module.exports = (app) => {
             },
             callIcon: function(call) {
                 if (call.status === 'new') {
-                    if (call.active) return 'missed-call'
-                    else return 'outgoing-call'
+                    if (call.active) return 'dialpad'
+                    else return 'dialpad'
                 } else if (['answered_elsewhere', 'bye', 'rejected_a', 'rejected_b'].includes(call.status)) {
                     return 'hang-up'
                 } else {
@@ -70,13 +70,13 @@ module.exports = (app) => {
                 return classes
             },
             newCallAllowed: function() {
-                let available = true
+                let allowed = true
                 for (let callId of Object.keys(this.calls)) {
                     if (['new', 'create', 'invite'].includes(this.calls[callId].status)) {
-                        available = false
+                        allowed = false
                     }
                 }
-                return available
+                return allowed
             },
         }, app.helpers.sharedMethods()),
         render: templates.call_switch.r,

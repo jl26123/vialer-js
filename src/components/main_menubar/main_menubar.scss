@@ -66,18 +66,27 @@
 
                 &::after {
                     @include icon-size(14px);
-                    background: $red-color;
+                    animation: bounce .5s ease-in-out infinite;
+                    background: $brand-accent-color;
                     border-radius: 50%;
+                    bottom: 13px;
                     content: "";
+                    left: 3px;
                     position: absolute;
-                    right: 4px;
-                    top: 13px;
                     z-index: 10;
                 }
             }
 
             &.calls {
-                &.calls-active {color: $green-color;}
+                &.calls-active {
+                    background: lighten($brand-color, 10%);
+
+                    &.active {
+                        background: $white;
+                        svg {fill: $brand-color;}
+                    }
+                    svg {fill: $white-color;}
+                }
             }
 
 

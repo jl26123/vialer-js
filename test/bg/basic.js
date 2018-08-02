@@ -9,18 +9,10 @@ let settings = {}
 rc('vialer-js', settings)
 
 require('../../src/js/bg/vendor')
-require('../../src/js/i18n/nl')
+require('../../src/js/i18n')
 
-
+const BRAND = process.env.BRAND
 const {AppBackground, options} = require('../../src/js/bg')
-// Load modules manually from settings.
-const availabilityAddons = settings.brands.bologna.modules.builtin.availability.addons
-const contactProviders = settings.brands.bologna.modules.builtin.contacts.providers
-const userAdapter = settings.brands.bologna.modules.builtin.user.adapter
-options.modules.builtin.find((i) => i.name === 'availability').addons = availabilityAddons
-options.modules.builtin.find((i) => i.name === 'contacts').providers = contactProviders
-options.modules.builtin.find((i) => i.name === 'user').adapter = userAdapter
-options.modules.custom = settings.brands.bologna.modules.custom
 
 
 test('[bg] starting up sequence', function(t) {
@@ -39,7 +31,10 @@ test('[bg] starting up sequence', function(t) {
 test('[bg] translations', async function(t) {
     t.plan(3)
 
-    const files = await glob('{src/js/**/*.js,src/components/**/{*.vue,*.js}}')
+    const bg = new AppBackground(options)
+
+    const files = await glob('{src/js/**/*.js,src/components/**/{*.js,*.vue},node_modules/vjs-*/src/**/{*.js,*.vue}}')
+
     const translationMatch = /\$t\([\s]*'([a-zA-Z0-9_\s{}.,\\'!?%\-:;"]+)'[(\),)?]/g
     const unescape = /\\/g
     let missing = []
@@ -53,14 +48,14 @@ test('[bg] translations', async function(t) {
             // All translations must start with lower case.
             if (($t[0] !== $t[0].toLowerCase() && $t[1] !== $t[1].toUpperCase())) faultyUppercase.push($t)
             translations.push($t)
-            if (!($t in global.translations.nl)) {
+            if (!($t in bg.i18n.translations.nl)) {
                 missing.push($t)
             }
         })
     }
 
     // Check if we have translations that are not defined; i.e. that are redundant.
-    for (const translation of Object.keys(global.translations.nl)) {
+    for (const translation of Object.keys(bg.i18n.translations.nl)) {
         if (!(translations.includes(translation))) {
             redundant.push(translation)
         }

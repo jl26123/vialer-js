@@ -14,7 +14,6 @@ class I18nTranslations {
         for (const builtinModule of modules.builtin) {
             if (builtinModule.i18n) {
                 builtinModule.i18n.forEach((i) => {
-                    // Object.assign(this.translations, require(`${i}/src/js/i18n`))
                     app.__mergeDeep(this.translations, require(`${i}/src/js/i18n`))
                 })
             }

@@ -1,8 +1,8 @@
 <component class="component-account-picker">
-    <!-- Platform integration allows the user to select a voip-account. -->
+
     <Field name="webrtc_account" type="select"
         :disabled="!settings.webrtc.toggle"
-        :empty="(status === 'loading') ? `${$t('loading accounts')}...` : $t('no accounts')"
+        :empty="(status === 'loading') ? `${$t('loading accounts').capitalize()}...` : $t('no accounts').capitalize()"
         :help="$t('voIP account that can be used by the softphone.')"
         :label="label" :model.sync="selected"
         :options="settings.webrtc.account.options"

@@ -1,3 +1,4 @@
+@import "vialer-js/lib/mixins";
 @import "vialer-js/lib/variables";
 
 // The most upper box containing account info and
@@ -5,7 +6,7 @@
 .component-main-callbar {
     align-items: center;
     background: $brand-accent-color;
-    color: $white;
+    color: $white-color;
     display: flex;
     font-size: 0.8rem;
     font-weight: 500;
@@ -25,6 +26,8 @@
         &:hover {color: $brand-color;}
     }
 
+
+
     .status-left {
         // Don't wrap but put dots at the end if it doesn't fit.
         align-items: center;
@@ -34,7 +37,12 @@
         white-space: nowrap;
 
         .status-indicator {
+            text-align: center;
             width: $spacer * 5;
+
+            svg {
+                @include icon-size($spacer * 3);
+            }
 
             i {
                 font-size: 1.2rem;

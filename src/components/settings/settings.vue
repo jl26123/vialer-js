@@ -65,7 +65,7 @@
         <Field name="telemetry_enabled" type="checkbox"
             :label="$t('telemetry')"
             :model.sync="settings.telemetry.enabled"
-            :help="$t('by collecting information about anonymized usage and errors, we are able to improve this software at a faster pace.')"/>
+            :help="$t('we solely collect anonymized data about usage statistics and application errors with the purpose to improve the {name} more efficiently.', {name: app.name})"/>
     </div>
 
     <!-- Phone preferences -->

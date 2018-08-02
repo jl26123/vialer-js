@@ -113,4 +113,19 @@
         }
     }
 
+
+    &.regular {
+        .item {
+            .item-options {
+                margin-right: $spacer;
+                .item-option {
+
+                    svg {
+                        @include icon-size($spacer * 1.75);
+                    }
+                }
+            }
+        }
+    }
+
 }

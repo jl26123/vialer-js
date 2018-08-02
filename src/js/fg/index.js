@@ -113,19 +113,8 @@ class AppForeground extends App {
     }
 }
 
-let options = {
-    env,
-    modules: {
-        builtin: [
-            {
-                addons: process.env.BUILTIN_AVAILABILITY_ADDONS,
-                module: require('./modules/availability'),
-                name: 'availability',
-            },
-        ],
-        custom: process.env.CUSTOM_MOD,
-    },
-}
+const options = require('./lib/options')
+console.log("OPTIONS", options)
 
 // Used in browser context to allow a context closure without
 // having to make an additional JavaScript build target.
