@@ -8,7 +8,13 @@ module.exports = (app, shared) => {
                 return this.permission
             },
         }, app.helpers.sharedComputed()),
-        methods: shared().methods,
+        methods: Object.assign({
+            queryDevices: function() {
+                app.emit('bg:devices:verify-sinks', {callback: () => {
+                    this.stepNext()
+                }})
+            },
+        }, shared().methods),
         render: templates.wizard_mic_permission.r,
         staticRenderFns: templates.wizard_mic_permission.s,
         store: {

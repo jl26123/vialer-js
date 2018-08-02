@@ -15,7 +15,7 @@
                 {{$t('back')}}
             </button>
 
-            <button class="button is-primary cf test-wizard-mic-permission-next" @click="stepNext()" :disabled="!stepValid">
+            <button class="button is-primary cf test-wizard-mic-permission-next" @click="queryDevices()" :disabled="!stepValid">
                 {{$t('setup audio')}}
             </button>
         </div>

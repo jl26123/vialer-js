@@ -5,7 +5,10 @@ class Devices {
     constructor(app) {
         this.app = app
 
-        this.app.on('bg:devices:verify-sinks', () => this.verifySinks())
+        this.app.on('bg:devices:verify-sinks', async({callback}) => {
+            await this.verifySinks()
+            callback()
+        })
 
         // Detect changes in connected devices while running.
         if (this.app.env.isBrowser) {
@@ -65,12 +68,15 @@ class Devices {
         }
 
         for (const device of devices) {
-            if (device.id === 'default') device.label = this.app.$t('default').capitalize()
-            if (device.kind === 'audioinput') {
-                input.push({id: device.deviceId, name: device.label, valid: true})
-            } else if (device.kind === 'audiooutput') {
-                output.push({id: device.deviceId, name: device.label, valid: true})
+            if (device.label) {
+                if (device.id === 'default') device.label = this.app.$t('default').capitalize()
+                if (device.kind === 'audioinput') {
+                    input.push({id: device.deviceId, name: device.label, valid: true})
+                } else if (device.kind === 'audiooutput') {
+                    output.push({id: device.deviceId, name: device.label, valid: true})
+                }
             }
+
         }
 
         return {input, output}

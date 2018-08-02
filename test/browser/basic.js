@@ -11,22 +11,38 @@ rc('vialer-js', settings)
 
 // Environment initialization.
 const BRAND = process.env.BRAND ? process.env.BRAND : 'bologna'
-let ENDPOINT, PASSWORD, USERNAME
+let ENDPOINT, PASSWORDS = {}, USERNAMES = {}
 
-const SCREENSPATH = path.join(__dirname, '../', '../', 'docs', 'tutorials', BRAND)
+const SCREENSPATH = path.join(__dirname, '../', '../', 'docs', 'screenshots', BRAND)
 
 if (process.env[`TESTS_USERNAME_${BRAND.toUpperCase()}`]) {
     // WARNING: Do NOT log these variables while committing to Github.
     // This may expose the Circle CI secrets in the build log. Change the
     // account credentials immediately in case this happens by accident.
     ENDPOINT = process.env[`TESTS_ENDPOINT_${BRAND.toUpperCase()}`]
-    USERNAME = process.env[`TESTS_USERNAME_${BRAND.toUpperCase()}`]
-    PASSWORD = process.env[`TESTS_PASSWORD_${BRAND.toUpperCase()}`]
+    USERNAMES = {
+        alice: process.env[`TESTS_USERNAME_ALICE_${BRAND.toUpperCase()}`],
+        bob: process.env[`TESTS_USERNAME_BOB_${BRAND.toUpperCase()}`],
+    }
+    PASSWORDS = {
+        alice: process.env[`TESTS_PASSWORD_ALICE_${BRAND.toUpperCase()}`],
+        bob: process.env[`TESTS_PASSWORD_BOB_${BRAND.toUpperCase()}`],
+    }
 } else {
-    USERNAME = settings.brands[BRAND].tests.username
-    PASSWORD = settings.brands[BRAND].tests.password
     ENDPOINT = settings.brands[BRAND].tests.endpoint
+    USERNAMES = {
+        alice: settings.brands[BRAND].tests.alice.username,
+        bob: settings.brands[BRAND].tests.bob.username,
+    }
+    PASSWORDS = {
+        alice: settings.brands[BRAND].tests.alice.password,
+        bob: settings.brands[BRAND].tests.bob.password,
+    }
 }
+
+let _step = 0
+const step = () => {_step += 1; return _step}
+
 
 
 test('[browser] <alice> I am logging in.', async(t) => {
@@ -67,27 +83,27 @@ test('[browser] <alice> I am logging in.', async(t) => {
     ])
 
     await alice.waitFor('.greeting')
-    await alice.screenshot({path: path.join(SCREENSPATH, '1. login.png')})
+    await alice.screenshot({path: path.join(SCREENSPATH, `${step()}-login.png`)})
 
     // The voip adapter has an endpoint field that must be filled.
     if (settings.brands[BRAND].modules.builtin.user.adapter === 'vjs-adapter-user-voip') {
         await alice.type('input[name="endpoint"]', ENDPOINT)
     }
 
-    await alice.type('input[name="username"]', USERNAME)
-    await alice.type('input[name="password"]', PASSWORD)
-    await alice.screenshot({path: path.join(SCREENSPATH, '2. login-credentials.png')})
+    await alice.type('input[name="username"]', USERNAMES.alice)
+    await alice.type('input[name="password"]', PASSWORDS.alice)
+    await alice.screenshot({path: path.join(SCREENSPATH, `${step()}-login-credentials.png`)})
     await alice.click('.test-login-button')
 
     await alice.waitFor('.component-wizard-welcome')
 
     t.end()
     test('[browser] <alice> I am going to complete the wizard.', async(_t) => {
-        await alice.screenshot({path: path.join(SCREENSPATH, '3. wizard-welcome.png')})
+        await alice.screenshot({path: path.join(SCREENSPATH, `${step()}-wizard-welcome.png`)})
         await alice.click('.test-wizard-welcome-next')
 
         await alice.waitFor('.component-wizard-telemetry')
-        await alice.screenshot({path: path.join(SCREENSPATH, '4. wizard-telemetry.png')})
+        await alice.screenshot({path: path.join(SCREENSPATH, `${step()}-wizard-telemetry.png`)})
         await alice.click('.test-wizard-telemetry-yes')
 
         // For now, only vjs-adapter-user-vg supports account selection.
@@ -95,24 +111,44 @@ test('[browser] <alice> I am logging in.', async(t) => {
             // Wait for the select to be filled by the platform API call.
             await alice.waitFor('.component-wizard-account')
             await alice.waitFor('select option:not([disabled="disabled"])')
-            await alice.screenshot({path: path.join(SCREENSPATH, '5. wizard-account.png')})
+            await alice.screenshot({path: path.join(SCREENSPATH, `${step()}-wizard-account.png`)})
             await alice.click('.test-wizard-account-next')
         }
 
         await alice.waitFor('.component-wizard-mic-permission')
-        await alice.screenshot({path: path.join(SCREENSPATH, '6. wizard-mic-permission.png')})
+        await alice.screenshot({path: path.join(SCREENSPATH, `${step()}-wizard-mic-permission.png`)})
         await alice.click('.test-wizard-mic-permission-next')
 
         await alice.waitFor('.component-wizard-devices')
-        await alice.screenshot({path: path.join(SCREENSPATH, '7. wizard-devices.png')})
+        await alice.waitFor('select option:not([disabled="disabled"])')
+        let [inputOptions, outputOptions, soundsOptions] = await Promise.all([
+            alice.$$('#input_device option'),
+            alice.$$('#output_device option'),
+            alice.$$('#sounds_device option'),
+        ])
+
+        // There are exactly 3 fake input/output devices.
+        t.equal(inputOptions.length, 3, 'input devices are filled from browser devices query')
+        t.equal(outputOptions.length, 3, 'output devices are filled from browser devices query')
+        t.equal(soundsOptions.length, 3, 'sounds devices are filled from browser devices query')
+
+        await alice.screenshot({path: path.join(SCREENSPATH, `${step()}-wizard-devices.png`)})
         await alice.click('.test-wizard-devices-next')
 
         await alice.waitFor('.component-main-statusbar')
 
+        // Bring Bob to life by cloning Alice.
         const vaultKey = await alice.evaluate('bg.crypto.storeVaultKey()')
         let bobState = await alice.evaluate('bg.state')
-        // The third account is Bob.
-        bobState.settings.webrtc.account.selected = bobState.settings.webrtc.account.options[2]
+        let account = bobState.settings.webrtc.account.selected
+
+        if (settings.brands[BRAND].modules.builtin.user.adapter === 'vjs-adapter-user-vg') {
+            account = bobState.settings.webrtc.account.options[2]
+        } else {
+            account.username = USERNAMES.bob.split('@')[0]
+            account.password = PASSWORDS.bob
+            account.uri = `sip:${USERNAMES.bob}`
+        }
         await bob.evaluate(`bg.setState(${JSON.stringify(bobState)})`)
         await bob.evaluate(`bg.crypto._importVaultKey('${vaultKey}')`)
         await bob.evaluate('bg.modules.calls.connect()')
@@ -123,17 +159,7 @@ test('[browser] <alice> I am logging in.', async(t) => {
 
         // Open a second tab and get another tab ready.
         test('[browser] <alice> I am calling bob.', async(__t) => {
-            let [inputOptions, outputOptions, soundsOptions] = await Promise.all([
-                alice.$$('#input_device option'),
-                alice.$$('#output_device option'),
-                alice.$$('#sounds_device option'),
-            ])
-            await alice.screenshot({path: path.join(SCREENSPATH, '7. settings-audio-devices.png')})
-
-            // There are exactly 3 fake input/output devices.
-            t.equal(inputOptions.length, 3, 'input devices are filled from browser devices query')
-            t.equal(outputOptions.length, 3, 'output devices are filled from browser devices query')
-            t.equal(soundsOptions.length, 3, 'sounds devices are filled from browser devices query')
+            await alice.screenshot({path: path.join(SCREENSPATH, `${step()}-ready-to-use.png`)})
 
             // Close audio settings check notification and head over to the calls page.
             await alice.click('.notification .test-delete')
@@ -144,23 +170,23 @@ test('[browser] <alice> I am logging in.', async(t) => {
             await alice.click('.component-call-keypad .test-key-2')
             await alice.click('.component-call-keypad .test-key-2')
             await alice.click('.component-call-keypad .test-key-9')
-            await alice.screenshot({path: path.join(SCREENSPATH, '8. dialpad-call.png')})
+            await alice.screenshot({path: path.join(SCREENSPATH, `${step()}-dialpad-call.png`)})
             await alice.click('.test-call-button')
 
             await alice.waitFor('.component-calls .call-ongoing')
-            await alice.screenshot({path: path.join(SCREENSPATH, '9. calldialog-outgoing.png')})
+            await alice.screenshot({path: path.join(SCREENSPATH, `${step()}-calldialog-outgoing.png`)})
 
             __t.end()
 
             test('[browser] <bob> alice is calling; let\'s talk.', async(___t) => {
                 await bob.waitFor('.component-calls .call-ongoing')
-                await bob.screenshot({path: path.join(SCREENSPATH, '10. calldialog-incoming.png')})
+                await bob.screenshot({path: path.join(SCREENSPATH, `${step()}-calldialog-incoming.png`)})
                 await bob.click('.component-call .test-button-accept')
                 // Alice and bob are now getting connected;
                 // wait for Alice to see the connected screen.
                 await alice.waitFor('.component-call .call-options')
-                await alice.screenshot({path: path.join(SCREENSPATH, '11. calldialog-outgoing-accepted.png')})
-                await bob.screenshot({path: path.join(SCREENSPATH, '12. calldialog-incoming-accepted.png')})
+                await alice.screenshot({path: path.join(SCREENSPATH, `${step()}-calldialog-outgoing-accepted.png`)})
+                await bob.screenshot({path: path.join(SCREENSPATH, `${step()}-calldialog-incoming-accepted.png`)})
 
                 await browser.close()
                 ___t.end()

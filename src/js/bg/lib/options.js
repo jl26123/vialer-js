@@ -46,7 +46,8 @@ module.exports = (function() {
         const rc = require('rc')
         let settings = {}
         rc('vialer-js', settings)
-        const brand = settings.brands[process.env.BRAND]
+        const BRAND = process.env.BRAND ? process.env.BRAND : 'bologna'
+        const brand = settings.brands[BRAND]
         availabilityModule.addons = brand.modules.builtin.availability.addons
         contactModule.providers = brand.modules.builtin.contacts.providers
         contactModule.i18n = brand.modules.builtin.contacts.i18n

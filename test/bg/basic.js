@@ -13,6 +13,7 @@ require('../../src/js/i18n')
 
 const {AppBackground, options} = require('../../src/js/bg')
 
+const BRAND = process.env.BRAND ? process.env.BRAND : 'bologna'
 
 test('[bg] starting up sequence', function(t) {
     t.plan(2)
@@ -31,8 +32,30 @@ test('[bg] translations', async function(t) {
     t.plan(3)
 
     const bg = new AppBackground(options)
+    let globPattern = '{src/js/**/*.js,src/components/**/{*.js,*.vue}'
+    const modules = settings.brands[BRAND].modules
+    if (modules.builtin.user.adapter) globPattern += `,node_modules/${modules.builtin.user.adapter}/src/**/{*.js,*.vue}`
+    if (modules.builtin.contacts.providers.length) {
+        for (const provider of modules.builtin.contacts.providers) {
+            globPattern += `,node_modules/${provider}/src/**/{*.js,*.vue}`
+        }
+    }
 
-    const files = await glob('{src/js/**/*.js,src/components/**/{*.js,*.vue},node_modules/vjs-*/src/**/{*.js,*.vue}}')
+    if (modules.builtin.availability.addons.length) {
+        for (const addon of modules.builtin.contacts.addons) {
+            globPattern += `,node_modules/${addon}/src/**/{*.js,*.vue}`
+        }
+    }
+
+    if (Object.keys(modules.custom).length) {
+        for (const name of modules.custom) {
+            globPattern += `,node_modules/${modules.custom[name].name}/src/**/{*.js,*.vue}`
+        }
+    }
+
+    globPattern += '}'
+
+    const files = await glob(globPattern)
 
     const translationMatch = /\$t\([\s]*'([a-zA-Z0-9_\s{}.,\\'!?%\-:;"]+)'[(\),)?]/g
     const unescape = /\\/g

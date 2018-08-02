@@ -78,10 +78,20 @@
                 }
             },
             "tests": {
-                "headless": true,
+                "alice": {
+                    "username": "",
+                    "password": ""
+                },
+                "bob": {
+                    "username": "",
+                    "password": ""
+                },
+                "charlie": {
+                    "username": "",
+                    "password": ""
+                },
                 "endpoint": "",
-                "username": "",
-                "password": "",
+                "headless": false,
                 "port": 8999
             },
             "vendor": {

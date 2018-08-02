@@ -17,11 +17,10 @@
         "default": {
             "staticFiles": {
               "include": [
-                  "./docs/logo.png",
-                  "./docs/screenshot-1.png",
-                  "./docs/screenshot-2.png",
-                  "./docs/screenshot-3.png",
-                  "./docs/screenshot-4.png"
+                  "./docs/logo.png"
+              ],
+              "paths": [
+                  "./screenshots"
               ]
             }
         },

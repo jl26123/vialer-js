@@ -59,21 +59,20 @@ class Media {
     */
     poll() {
         this.intervalId = setInterval(async() => {
-            try {
-                // Only do this when being authenticated; e.g. when there
-                // is an active state container around.
-                if (this.app.state.user.authenticated) {
+            // Only do this when being authenticated; e.g. when there
+            // is an active state container around.
+            if (this.app.state.user.authenticated) {
+                try {
                     await this.query()
                     // Early device query.
                     if (this.app.env.role.bg && !this.app.devices.cached) {
                         await this.app.devices.verifySinks()
                     }
+                } catch (err) {
+                    console.error(err)
+                    // An exception means something else than a lack of permission.
+                    clearInterval(this.intervalId)
                 }
-
-            } catch (err) {
-                console.error(err)
-                // An exception means something else than a lack of permission.
-                clearInterval(this.intervalId)
             }
         }, 500)
     }
