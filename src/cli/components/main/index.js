@@ -2,10 +2,6 @@ module.exports = function(app) {
     return Vue.component('Main', {
         data: function() {
             let data = Object.assign({
-                options: [
-                    'develop',
-                    'help',
-                ],
                 title: 'Bologna',
             }, require('./style')(app))
             return data
@@ -23,6 +19,7 @@ module.exports = function(app) {
                 process.exit(0)
             })
         },
+        store: 'options',
         template: require('./main.vue'),
     })
 }
