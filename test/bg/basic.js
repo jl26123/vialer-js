@@ -41,14 +41,14 @@ test('[bg] translations', async function(t) {
         }
     }
 
-    if (modules.builtin.availability.addons.length) {
-        for (const addon of modules.builtin.contacts.addons) {
+    if (modules.builtin.availability.addons.i18n.length) {
+        for (const addon of modules.builtin.availability.addons.i18n) {
             globPattern += `,node_modules/${addon}/src/**/{*.js,*.vue}`
         }
     }
 
     if (Object.keys(modules.custom).length) {
-        for (const name of modules.custom) {
+        for (const name of Object.keys(modules.custom)) {
             globPattern += `,node_modules/${modules.custom[name].name}/src/**/{*.js,*.vue}`
         }
     }

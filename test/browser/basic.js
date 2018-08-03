@@ -15,18 +15,18 @@ let ENDPOINT, PASSWORDS = {}, USERNAMES = {}
 
 const SCREENSPATH = path.join(__dirname, '../', '../', 'docs', 'screenshots', BRAND)
 
-if (process.env[`TESTS_USERNAME_${BRAND.toUpperCase()}`]) {
-    // WARNING: Do NOT log these variables while committing to Github.
-    // This may expose the Circle CI secrets in the build log. Change the
-    // account credentials immediately in case this happens by accident.
-    ENDPOINT = process.env[`TESTS_ENDPOINT_${BRAND.toUpperCase()}`]
+// WARNING: Do NOT log CI variables while committing to Github.
+// This may expose the Circle CI secrets in the build log. Change the
+// account credentials immediately when this happens.
+if (process.env[`CI_USERNAME_ALICE_${BRAND.toUpperCase()}`]) {
+    ENDPOINT = process.env[`CI_ENDPOINT_${BRAND.toUpperCase()}`]
     USERNAMES = {
-        alice: process.env[`TESTS_USERNAME_ALICE_${BRAND.toUpperCase()}`],
-        bob: process.env[`TESTS_USERNAME_BOB_${BRAND.toUpperCase()}`],
+        alice: process.env[`CI_USERNAME_ALICE_${BRAND.toUpperCase()}`],
+        bob: process.env[`CI_USERNAME_BOB_${BRAND.toUpperCase()}`],
     }
     PASSWORDS = {
-        alice: process.env[`TESTS_PASSWORD_ALICE_${BRAND.toUpperCase()}`],
-        bob: process.env[`TESTS_PASSWORD_BOB_${BRAND.toUpperCase()}`],
+        alice: process.env[`CI_PASSWORD_ALICE_${BRAND.toUpperCase()}`],
+        bob: process.env[`CI_PASSWORD_BOB_${BRAND.toUpperCase()}`],
     }
 } else {
     ENDPOINT = settings.brands[BRAND].tests.endpoint
