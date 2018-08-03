@@ -229,6 +229,7 @@ class Helpers {
                     debug: !this.settings.PRODUCTION,
                     entries: path.join(this.settings.SRC_DIR, 'js', `${target}.js`),
                     packageCache: {},
+                    paths: ['../node_modules', '../src/js/'],
                 })
                 if (this.settings.LIVERELOAD) BUNDLERS[bundleName].plugin(watchify)
                 for (let entry of entries) BUNDLERS[bundleName].add(entry)
@@ -300,6 +301,7 @@ class Helpers {
             const b = browserify({
                 basedir: path.join(__dirname, '..'),
                 detectGlobals: false,
+                paths: ['../node_modules', '../src/js/'],
             })
 
             for (const moduleName of Object.keys(sectionModules)) {
