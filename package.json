@@ -1,7 +1,7 @@
 {
     "name": "vialer-js",
     "productName": "vialer-js",
-    "version": "3.0.210",
+    "version": "4.0.0",
     "description": "Open-source WebRTC softphone & communication platform.",
     "engines": {
         "node": ">=8.0.0"
@@ -15,6 +15,9 @@
     "repository": {
         "type": "git",
         "url": "https://github.com/voipgrid/vialer-js.git"
+    },
+    "bin": {
+        "vjs": "gulp"
     },
     "keywords": [
         "electron",
@@ -95,6 +98,7 @@
     },
     "dependencies": {
         "axios": "^0.16.2",
+        "blessed-vue": "^2.0.1",
         "bulma": "^0.6.2",
         "bulma-switch": "^0.1.4",
         "css-element-queries": "^0.4.0",
@@ -108,8 +112,8 @@
         "vjs-availability-addon-vg": "git+https://github.com/vialer/vjs-availability-addon-vg#master",
         "vjs-contacts-provider-vg": "git+https://github.com/vialer/vjs-contacts-provider-vg#master",
         "vjs-mod-queues-vg": "git+https://github.com/vialer/vjs-mod-queues-vg#master",
-        "vjs-user-adapter-voip": "git+https://github.com/vialer/vjs-user-adapter-voip#master",
         "vjs-user-adapter-vg": "git+https://github.com/vialer/vjs-user-adapter-vg#master",
+        "vjs-user-adapter-voip": "git+https://github.com/vialer/vjs-user-adapter-voip#master",
         "vue": "^2.5.16",
         "vue-i18n-stash": "git+https://github.com/wearespindle/vue-stash-i18n.git#master",
         "vue-stash": "^2.0.1-beta",

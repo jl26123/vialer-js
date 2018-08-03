@@ -413,13 +413,14 @@ class Helpers {
     * and the build directory.
     */
     startDevServer() {
-        gutil.log('Starting development server. Hit Ctrl-c to quit.')
+        const port = 8999
         const app = connect()
         livereload.listen({silent: false})
         app.use(serveStatic(this.settings.BUILD_DIR))
         app.use('/', serveIndex(this.settings.BUILD_DIR, {icons: false}))
         app.use(mount('/docs', serveStatic(path.join(__dirname, 'build', 'docs'))))
-        http.createServer(app).listen(8999)
+        http.createServer(app).listen(port)
+        gutil.log(`local develop server running at http://localhost:${port}`)
     }
 }
 
